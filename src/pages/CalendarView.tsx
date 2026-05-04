@@ -286,7 +286,7 @@ export default function CalendarView() {
               const dow       = baseMonth.add(i, 'day').day()
               const isWeekend = dow === 0 || dow === 6
               return (
-                <div key={i} style={{ display: 'flex', height: ROW_H, borderBottom: isToday ? '2px solid var(--today)' : '1px solid #ede9e2' }}>
+                <div key={i} style={{ display: 'flex', height: ROW_H, borderBottom: '1px solid #ede9e2' }}>
                   <div style={{
                     width: DATE_COL_W, flexShrink: 0,
                     position: 'sticky', left: 0, zIndex: 3,
@@ -319,6 +319,32 @@ export default function CalendarView() {
                 </div>
               )
             })}
+
+            {/* Today red line — floats above everything including booking blocks */}
+            {todayIdx >= 0 && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: todayIdx * ROW_H + ROW_H - 1,
+                  left: 0, right: 0,
+                  height: 2,
+                  background: 'var(--today)',
+                  zIndex: 20,
+                  pointerEvents: 'none',
+                }}
+              >
+                {/* 左侧小圆点 */}
+                <div style={{
+                  position: 'absolute',
+                  left: DATE_COL_W - 5,
+                  top: -4,
+                  width: 10, height: 10,
+                  borderRadius: '50%',
+                  background: 'var(--today)',
+                }} />
+              </div>
+            )}
 
             {/* Booking block overlays — one continuous rounded rect per booking */}
             {properties.map((p, colIdx) =>
