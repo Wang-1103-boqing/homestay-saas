@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Modal, Select, message } from 'antd'
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, Palette, Check } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useStore } from '../store/useStore'
 import type { ExpenseRecord, ExpenseType, Property, PropertyType } from '../types'
@@ -18,8 +18,14 @@ const EXP_TYPE: Record<ExpenseType, { label: string; color: string; bg: string }
 }
 
 const COVER_COLORS = [
-  '#3c6652', '#c9a87c', '#7aab94', '#2a4a3a',
-  '#a3c4b0', '#b5804d', '#8a6a4a', '#4a7a62',
+  // 墨绿系
+  '#3c6652', '#2a4a3a', '#4a7a62', '#7aab94', '#a3c4b0',
+  // 暖棕系
+  '#c9a87c', '#b5804d', '#8a6a4a', '#d4a574', '#a07850',
+  // 深色系
+  '#4a5568', '#6b7280', '#78716c', '#57534e',
+  // 点缀色
+  '#7c6d5a', '#9a8070',
 ]
 
 let idCounter = Date.now()
@@ -183,9 +189,10 @@ function PropertyDetail({ property, onBack }: { property: Property; onBack: () =
 
 // ── 主列表页 ──────────────────────────────────────────────────
 export default function Properties() {
-  const { properties, addProperty, deleteProperty, addRentHistory } = useStore()
-  const [selectedId, setSelectedId]     = useState<string | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const { properties, addProperty, deleteProperty, updateProperty, addRentHistory } = useStore()
+  const [selectedId, setSelectedId]         = useState<string | null>(null)
+  const [showAddModal, setShowAddModal]     = useState(false)
+  const [colorPickingId, setColorPickingId] = useState<string | null>(null)
 
   const [fName, setFName]         = useState('')
   const [fRent, setFRent]         = useState('')
@@ -256,8 +263,15 @@ export default function Properties() {
         return (
           <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 16px rgba(42,74,58,0.08)' }}>
             {/* 封面色块 */}
-            <div style={{ height: 60, background: `linear-gradient(135deg, ${p.coverColor}88, ${p.coverColor})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ height: 60, background: `linear-gradient(135deg, ${p.coverColor}88, ${p.coverColor})`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               <div style={{ fontSize: 26 }}>🏡</div>
+              {/* 换色按钮 */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setColorPickingId(colorPickingId === p.id ? null : p.id) }}
+                style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.85)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+              >
+                <Palette size={13} color={p.coverColor} />
+              </button>
             </div>
             <div style={{ padding: '10px 14px 12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 7 }}>
@@ -279,6 +293,34 @@ export default function Properties() {
                   <Trash2 size={12} />
                 </button>
               </div>
+
+              {/* 颜色选择面板（展开式） */}
+              {colorPickingId === p.id && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, letterSpacing: 0.5, marginBottom: 10 }}>选择房间颜色 · 日历也会同步更新</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8 }}>
+                    {COVER_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          updateProperty({ ...p, coverColor: c })
+                          setColorPickingId(null)
+                          message.success('颜色已更新')
+                        }}
+                        style={{
+                          width: '100%', aspectRatio: '1', borderRadius: 8,
+                          background: c, border: p.coverColor === c ? '2.5px solid var(--text-1)' : '2px solid transparent',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: p.coverColor === c ? '0 0 0 1px #fff inset' : 'none',
+                          transition: 'transform 0.1s',
+                        }}
+                      >
+                        {p.coverColor === c && <Check size={10} color="#fff" strokeWidth={3} />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )
