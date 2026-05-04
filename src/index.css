@@ -4,24 +4,39 @@
 }
 
 :root {
-  --primary: #1677ff;
-  --primary-light: #e6f4ff;
-  --success: #52c41a;
-  --success-light: #f6ffed;
-  --warning: #fa8c16;
-  --warning-light: #fff7e6;
-  --danger: #ff4d4f;
-  --danger-light: #fff1f0;
-  --purple: #722ed1;
-  --bg: #f5f5f5;
+  /* ── 主色彩 ── */
+  --green:   #3c6652;
+  --green2:  #2a4a3a;
+  --green-l: #e2ede7;
+  --warm:    #c9a87c;
+  --today:   #ff3b30;
+
+  /* ── 背景 ── */
+  --bg:      #f4f2ed;
   --card-bg: #ffffff;
-  --text-1: #1a1a1a;
-  --text-2: #595959;
-  --text-3: #8c8c8c;
-  --border: #e8e8e8;
-  --tab-h: 60px;
+
+  /* ── 文字 ── */
+  --text-1:  #2d2926;
+  --text-2:  #6b6560;
+  --text-3:  #9a8e85;
+
+  /* ── 边框 ── */
+  --border:  #e2ddd5;
+
+  /* ── 旧变量兼容 ── */
+  --primary:       #3c6652;
+  --primary-light: #e2ede7;
+  --success:       #3c6652;
+  --success-light: #e2ede7;
+  --warning:       #c9a87c;
+  --warning-light: #fdf2e4;
+  --danger:        #ff3b30;
+  --danger-light:  #fff1f0;
+
+  /* ── 布局 ── */
+  --tab-h:    60px;
   --header-h: 56px;
-  --radius: 16px;
+  --radius:   16px;
 }
 
 html, body {
@@ -33,6 +48,10 @@ html, body {
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+input[type="date"] {
+  color: var(--text-1);
 }
 
 #root {
