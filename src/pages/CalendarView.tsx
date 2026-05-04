@@ -5,9 +5,9 @@ import { useStore } from '../store/useStore'
 import type { Booking } from '../types'
 import DateRangePicker from '../components/DateRangePicker'
 
-const ROW_H      = 26
-const DATE_COL_W = 34
-const MIN_COL_W  = 44
+const ROW_H      = 34
+const DATE_COL_W = 36
+const MIN_COL_W  = 52
 
 const NAV_BTN: React.CSSProperties = {
   width: 24, height: 24, borderRadius: 7,
@@ -156,7 +156,7 @@ export default function CalendarView() {
   // Scroll today to vertical center
   useEffect(() => {
     if (!scrollRef.current || todayIdx < 0) return
-    const HEADER_H = 34
+    const HEADER_H = 40
     const todayMidY = HEADER_H + todayIdx * ROW_H + ROW_H / 2
     scrollRef.current.scrollTop = Math.max(0, todayMidY - scrollRef.current.clientHeight / 2)
   }, [monthOffset, todayIdx])
@@ -213,16 +213,38 @@ export default function CalendarView() {
         <div style={{ minWidth: '100%', width: 'max-content', position: 'relative' }}>
 
           {/* Sticky header row */}
-          <div style={{ display: 'flex', position: 'sticky', top: 0, zIndex: 10, background: 'var(--card-bg)', borderBottom: '2px solid var(--green-l)' }}>
-            <div style={{ width: DATE_COL_W, flexShrink: 0, position: 'sticky', left: 0, zIndex: 11, background: 'var(--card-bg)', borderRight: '1px solid var(--border)' }} />
-            {properties.map((p) => (
+          <div style={{ display: 'flex', position: 'sticky', top: 0, zIndex: 10 }}>
+            {/* Date column header */}
+            <div style={{
+              width: DATE_COL_W, flexShrink: 0,
+              position: 'sticky', left: 0, zIndex: 11,
+              background: 'var(--bg)',
+              borderRight: '1px solid var(--border)',
+              borderBottom: '1px solid var(--border)',
+            }} />
+            {/* Room column headers — room color background */}
+            {properties.map((p, idx) => (
               <div
                 key={p.id}
                 onClick={() => setSelectedPropId(p.id)}
-                style={{ width: colW, flexShrink: 0, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5px 1px 0', gap: 3, cursor: 'pointer' }}
+                style={{
+                  width: colW, flexShrink: 0,
+                  borderRight: idx < properties.length - 1 ? '1px solid rgba(255,255,255,0.25)' : 'none',
+                  borderBottom: '1px solid var(--border)',
+                  background: p.coverColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '8px 4px',
+                  cursor: 'pointer',
+                }}
               >
-                <span style={{ fontSize: 6.5, fontWeight: 700, color: 'var(--text-1)', whiteSpace: 'nowrap' }}>{p.name}</span>
-                <div style={{ width: '100%', height: 3, background: p.coverColor }} />
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: '#fff',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  maxWidth: colW - 8,
+                }}>
+                  {p.name}
+                </span>
               </div>
             ))}
           </div>
@@ -232,24 +254,39 @@ export default function CalendarView() {
 
             {/* Grid rows */}
             {Array.from({ length: daysInMonth }, (_, i) => {
-              const isToday = i === todayIdx
+              const isToday   = i === todayIdx
+              const dow       = baseMonth.add(i, 'day').day()
+              const isWeekend = dow === 0 || dow === 6
               return (
-                <div key={i} style={{ display: 'flex', height: ROW_H, borderBottom: isToday ? '2.5px solid var(--today)' : '1px solid var(--border)' }}>
+                <div key={i} style={{ display: 'flex', height: ROW_H, borderBottom: isToday ? '2px solid var(--today)' : '1px solid #ede9e2' }}>
                   <div style={{
                     width: DATE_COL_W, flexShrink: 0,
                     position: 'sticky', left: 0, zIndex: 3,
-                    background: 'var(--bg)', borderRight: '1px solid var(--border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 8, fontWeight: isToday ? 800 : 500,
-                    color: isToday ? 'var(--today)' : 'var(--text-2)',
+                    background: isWeekend ? '#f0ece6' : 'var(--bg)',
+                    borderRight: '1px solid #ede9e2',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    gap: 1,
                   }}>
-                    {isToday && (
-                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--today)', marginRight: 2, display: 'inline-block', flexShrink: 0 }} />
+                    {isToday ? (
+                      <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--today)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff' }}>
+                        {i + 1}
+                      </span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 11, fontWeight: isWeekend ? 600 : 400, color: isWeekend ? 'var(--warm)' : 'var(--text-2)', lineHeight: 1 }}>{i + 1}</span>
+                        <span style={{ fontSize: 8, color: isWeekend ? 'var(--warm)' : 'var(--text-3)', opacity: 0.8, lineHeight: 1 }}>
+                          {['日','一','二','三','四','五','六'][dow]}
+                        </span>
+                      </>
                     )}
-                    {i + 1}
                   </div>
-                  {properties.map((p) => (
-                    <div key={p.id} style={{ width: colW, flexShrink: 0, background: 'var(--card-bg)', borderRight: '1px solid var(--border)' }} />
+                  {properties.map((p, colIdx) => (
+                    <div key={p.id} style={{
+                      width: colW, flexShrink: 0,
+                      background: colIdx % 2 === 0 ? 'var(--card-bg)' : '#faf9f7',
+                      borderRight: colIdx < properties.length - 1 ? '1px solid #ede9e2' : 'none',
+                    }} />
                   ))}
                 </div>
               )
@@ -268,11 +305,13 @@ export default function CalendarView() {
                     top: startIdx * ROW_H + 2,
                     height: nights * ROW_H - 4,
                     background: p.coverColor,
-                    borderRadius: 5,
-                    padding: '3px 4px',
-                    fontSize: 6, fontWeight: 700, color: '#fff',
+                    borderRadius: 6,
+                    padding: '4px 6px',
+                    fontSize: 9, fontWeight: 700, color: '#fff',
                     overflow: 'hidden', zIndex: 2, cursor: 'pointer',
-                    lineHeight: 1.2,
+                    lineHeight: 1.3,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.15)',
                   }}
                 >
                   {booking.guestName}
