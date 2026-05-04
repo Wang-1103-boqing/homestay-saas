@@ -291,26 +291,19 @@ export default function Properties() {
       ) : properties.map((p) => {
         const st = STATUS_MAP[p.status]
         return (
-          <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 16px rgba(42,74,58,0.08)' }}>
-            {/* 封面色块：房源名称居顶 */}
-            <div style={{ height: 60, background: `linear-gradient(135deg, ${p.coverColor}cc, ${p.coverColor})`, display: 'flex', alignItems: 'center', paddingLeft: 14, position: 'relative' }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: 0.5, textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
-                {p.name}
-              </span>
-              {/* 换色按钮 */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setColorPickingId(colorPickingId === p.id ? null : p.id) }}
-                style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.85)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
-              >
-                <Palette size={13} color={p.coverColor} />
-              </button>
-            </div>
-            <div style={{ padding: '10px 14px 12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 7 }}>
-                <div style={{ flex: 1 }}>
-                  {/* 名称 — 可内联编辑 */}
+          <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 16px rgba(42,74,58,0.08)', display: 'flex' }}>
+
+            {/* 左侧色条 */}
+            <div style={{ width: 6, flexShrink: 0, background: p.coverColor, borderRadius: '14px 0 0 14px' }} />
+
+            {/* 右侧内容 */}
+            <div style={{ flex: 1, padding: '12px 14px 12px 12px' }}>
+
+              {/* 顶行：名称 + 状态 + 操作 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   {editingNameId === p.id ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <input
                         autoFocus
                         value={editingNameVal}
@@ -324,53 +317,50 @@ export default function Properties() {
                           }
                           if (e.key === 'Escape') setEditingNameId(null)
                         }}
-                        style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', border: 'none', borderBottom: '2px solid var(--green)', outline: 'none', background: 'transparent', width: 130, fontFamily: 'inherit' }}
+                        style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', border: 'none', borderBottom: `2px solid ${p.coverColor}`, outline: 'none', background: 'transparent', width: 120, fontFamily: 'inherit' }}
                       />
-                      <button
-                        onClick={() => {
-                          if (!editingNameVal.trim()) return
-                          updateProperty({ ...p, name: editingNameVal.trim() })
-                          setEditingNameId(null)
-                          message.success('名称已更新')
-                        }}
-                        style={{ height: 22, padding: '0 8px', borderRadius: 6, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
-                      >
+                      <button onClick={() => { if (!editingNameVal.trim()) return; updateProperty({ ...p, name: editingNameVal.trim() }); setEditingNameId(null); message.success('名称已更新') }}
+                        style={{ height: 22, padding: '0 8px', borderRadius: 6, border: 'none', background: p.coverColor, color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
                         保存
                       </button>
-                      <button
-                        onClick={() => setEditingNameId(null)}
-                        style={{ height: 22, padding: '0 6px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 10, cursor: 'pointer' }}
-                      >
+                      <button onClick={() => setEditingNameId(null)}
+                        style={{ height: 22, padding: '0 6px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 10, cursor: 'pointer' }}>
                         取消
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{p.name}</div>
-                      <button
-                        onClick={() => { setEditingNameId(p.id); setEditingNameVal(p.name) }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
-                      >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>{p.name}</span>
+                      <button onClick={() => { setEditingNameId(p.id); setEditingNameVal(p.name) }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}>
                         <Pencil size={11} color="var(--text-3)" />
                       </button>
                     </div>
                   )}
-                  <div style={{ fontSize: 10, color: 'var(--text-3)' }}>
-                    日租 ¥{p.pricePerNight} · 月租 ¥{p.monthlyRent}
-                  </div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {/* 右侧图标组 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 999, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</span>
+                  <button onClick={() => { setColorPickingId(colorPickingId === p.id ? null : p.id) }}
+                    style={{ width: 26, height: 26, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Palette size={12} color={p.coverColor} />
+                  </button>
+                  <button onClick={() => handleDelete(p.id, p.name)}
+                    style={{ width: 26, height: 26, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trash2 size={11} />
+                  </button>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setSelectedId(p.id)} style={{ flex: 1, height: 34, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text-2)', borderRadius: 9, fontSize: 12, cursor: 'pointer' }}>
-                  支出记录 ›
-                </button>
-                <button onClick={() => handleDelete(p.id, p.name)} style={{ width: 34, height: 34, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text-3)', borderRadius: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Trash2 size={12} />
-                </button>
+
+              {/* 价格信息 */}
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10 }}>
+                日租 ¥{p.pricePerNight} · 月租 ¥{p.monthlyRent}
               </div>
+
+              {/* 支出记录按钮 */}
+              <button onClick={() => setSelectedId(p.id)} style={{ width: '100%', height: 32, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-2)', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
+                查看支出记录 ›
+              </button>
 
               {/* 颜色选择面板（展开式） */}
               {colorPickingId === p.id && (
