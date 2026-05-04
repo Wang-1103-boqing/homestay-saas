@@ -220,7 +220,9 @@ export default function Properties() {
   const { properties, addProperty, deleteProperty, updateProperty, addRentHistory } = useStore()
   const [selectedId, setSelectedId]         = useState<string | null>(null)
   const [showAddModal, setShowAddModal]     = useState(false)
-  const [colorPickingId, setColorPickingId] = useState<string | null>(null)
+  const [colorPickingId, setColorPickingId]   = useState<string | null>(null)
+  const [editingNameId, setEditingNameId]     = useState<string | null>(null)
+  const [editingNameVal, setEditingNameVal]   = useState('')
 
   const [fName, setFName]         = useState('')
   const [fRent, setFRent]         = useState('')
@@ -303,13 +305,59 @@ export default function Properties() {
             </div>
             <div style={{ padding: '10px 14px 12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 7 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                <div style={{ flex: 1 }}>
+                  {/* 名称 — 可内联编辑 */}
+                  {editingNameId === p.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                      <input
+                        autoFocus
+                        value={editingNameVal}
+                        onChange={(e) => setEditingNameVal(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (!editingNameVal.trim()) return
+                            updateProperty({ ...p, name: editingNameVal.trim() })
+                            setEditingNameId(null)
+                            message.success('名称已更新')
+                          }
+                          if (e.key === 'Escape') setEditingNameId(null)
+                        }}
+                        style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', border: 'none', borderBottom: '2px solid var(--green)', outline: 'none', background: 'transparent', width: 130, fontFamily: 'inherit' }}
+                      />
+                      <button
+                        onClick={() => {
+                          if (!editingNameVal.trim()) return
+                          updateProperty({ ...p, name: editingNameVal.trim() })
+                          setEditingNameId(null)
+                          message.success('名称已更新')
+                        }}
+                        style={{ height: 22, padding: '0 8px', borderRadius: 6, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={() => setEditingNameId(null)}
+                        style={{ height: 22, padding: '0 6px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{p.name}</div>
+                      <button
+                        onClick={() => { setEditingNameId(p.id); setEditingNameVal(p.name) }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                      >
+                        <Pencil size={11} color="var(--text-3)" />
+                      </button>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 10, color: 'var(--text-3)' }}>
                     日租 ¥{p.pricePerNight} · 月租 ¥{p.monthlyRent}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 999, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</span>
                 </div>
               </div>

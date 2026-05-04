@@ -32,19 +32,27 @@ function BookingPopup({
   booking: Booking; propColor: string
   onClose: () => void; onSave: (updated: Booking) => void
 }) {
-  const [name, setName]         = useState(booking.guestName)
-  const [checkIn, setCheckIn]   = useState(booking.checkIn)
-  const [checkOut, setCheckOut] = useState(booking.checkOut)
-  const [amount, setAmount]     = useState(String(booking.totalAmount))
-  const [notes, setNotes]       = useState(booking.notes)
+  const { properties } = useStore()
+  const [name, setName]               = useState(booking.guestName)
+  const [propertyId, setPropertyId]   = useState(booking.propertyId)
+  const [checkIn, setCheckIn]         = useState(booking.checkIn)
+  const [checkOut, setCheckOut]       = useState(booking.checkOut)
+  const [amount, setAmount]           = useState(String(booking.totalAmount))
+  const [notes, setNotes]             = useState(booking.notes)
   const mode = booking.bookingMode ?? 'nightly'
 
+  // 选中房间的颜色，用于顶部色条和保存按钮
+  const selectedProp = properties.find((p) => p.id === propertyId)
+  const activeColor  = selectedProp?.coverColor ?? propColor
+
   const handleSave = () => {
+    if (!propertyId) { alert('请选择房间'); return }
     if (!name.trim()) { alert('请输入客人姓名'); return }
     if (!checkIn || !checkOut) { alert('请选择日期'); return }
     if (dayjs(checkOut).diff(dayjs(checkIn), 'day') <= 0) { alert('退房日期必须晚于入住日期'); return }
     onSave({
       ...booking,
+      propertyId,
       guestName: name.trim(), checkIn, checkOut,
       totalAmount: Number(amount) || 0, paidAmount: Number(amount) || 0, notes,
     })
@@ -57,13 +65,33 @@ function BookingPopup({
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
     >
       <div style={{ width: '100%', maxWidth: 540, background: '#fff', borderRadius: '20px 20px 0 0', padding: '0 0 calc(20px + env(safe-area-inset-bottom, 0px))', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ height: 5, background: propColor, borderRadius: '20px 20px 0 0' }} />
+        <div style={{ height: 5, background: activeColor, borderRadius: '20px 20px 0 0' }} />
         <div style={{ padding: '14px 16px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>预订详情</div>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
               <X size={18} color="var(--text-3)" />
             </button>
+          </div>
+          <label style={LBL}>所住房间</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+            {properties.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPropertyId(p.id)}
+                style={{
+                  height: 32, padding: '0 14px', borderRadius: 999,
+                  border: '2px solid',
+                  borderColor: propertyId === p.id ? p.coverColor : 'var(--border)',
+                  background: propertyId === p.id ? p.coverColor : 'var(--card-bg)',
+                  color: propertyId === p.id ? '#fff' : 'var(--text-2)',
+                  fontSize: 12, fontWeight: propertyId === p.id ? 700 : 400,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
           <label style={LBL}>客人姓名</label>
           <input style={FIELD_BOX} value={name} onChange={(e) => setName(e.target.value)} />
@@ -77,7 +105,7 @@ function BookingPopup({
             onChange={(e) => setNotes(e.target.value)} placeholder="无备注" />
           <button onClick={handleSave} style={{
             width: '100%', height: 48, marginTop: 14, borderRadius: 12, border: 'none',
-            background: propColor, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+            background: activeColor, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
           }}>
             保存修改
           </button>
