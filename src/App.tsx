@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Plus, Calendar, FileText, Home, DollarSign, Bell } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { fetchAll } from './lib/db'
 import { useStore } from './store/useStore'
@@ -10,12 +11,12 @@ import Revenue from './pages/Revenue'
 
 type TabKey = 'add' | 'calendar' | 'bookings' | 'properties' | 'revenue'
 
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'add',        label: '新增预订', icon: '➕' },
-  { key: 'calendar',   label: '排期日历', icon: '📅' },
-  { key: 'bookings',   label: '预订记录', icon: '📋' },
-  { key: 'properties', label: '房源管理', icon: '🏠' },
-  { key: 'revenue',    label: '收益明细', icon: '💰' },
+const TABS: { key: TabKey; label: string; Icon: React.FC<{ size?: number; strokeWidth?: number; color?: string }> }[] = [
+  { key: 'add',        label: '新增', Icon: Plus },
+  { key: 'calendar',   label: '日历', Icon: Calendar },
+  { key: 'bookings',   label: '记录', Icon: FileText },
+  { key: 'properties', label: '房源', Icon: Home },
+  { key: 'revenue',    label: '收益', Icon: DollarSign },
 ]
 
 const PAGE_MAP: Record<TabKey, React.ReactNode> = {
@@ -27,14 +28,13 @@ const PAGE_MAP: Record<TabKey, React.ReactNode> = {
 }
 
 export default function App() {
-  const [tab, setTab]       = useState<TabKey>('add')
+  const [tab, setTab]         = useState<TabKey>('add')
   const [loading, setLoading] = useState(true)
-  const [error, setError]   = useState('')
-  const [realtimeOk, setRealtimeOk] = useState(true)   // Realtime 连接状态
+  const [error, setError]     = useState('')
+  const [realtimeOk, setRealtimeOk] = useState(true)
   const setAll = useStore((s) => s.setAll)
   const realtimeRetries = useRef(0)
 
-  // ── 从 Supabase 拉取全部数据 ──────────────────────────────
   const reload = useCallback(async () => {
     try {
       const data = await fetchAll()
@@ -45,7 +45,6 @@ export default function App() {
     }
   }, [setAll])
 
-  // ── 首次加载 ──────────────────────────────────────────────
   useEffect(() => {
     reload()
       .then(() => setError(''))
@@ -53,7 +52,6 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [reload])
 
-  // ── Realtime 实时订阅（国内可能不稳定，失败不影响主功能）────
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
 
@@ -71,7 +69,6 @@ export default function App() {
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.warn('[realtime] connection issue, retry later:', err)
             setRealtimeOk(false)
-            // 最多重连 3 次，之后静默降级（REST 数据仍然正常）
             if (realtimeRetries.current < 3) {
               realtimeRetries.current++
               setTimeout(connect, 10_000 * realtimeRetries.current)
@@ -88,31 +85,34 @@ export default function App() {
     }
   }, [reload])
 
-  // ── 加载中 ──────────────────────────────────────────────
+  // ── 加载中 ──
   if (loading) {
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: '#f5f5f5', gap: 16,
+        background: 'var(--bg)', gap: 14,
       }}>
-        <div style={{ fontSize: 48 }}>🏠</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>民宿管家</div>
-        <div style={{ fontSize: 15, color: '#8c8c8c' }}>正在连接数据库…</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green2)', letterSpacing: 3 }}>
+          民宿管家
+        </div>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+          Homestay Manager
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 8 }}>正在连接数据库…</div>
       </div>
     )
   }
 
-  // ── 连接失败 ────────────────────────────────────────────
+  // ── 连接失败 ──
   if (error) {
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: '#f5f5f5', gap: 16, padding: 32,
+        background: 'var(--bg)', gap: 16, padding: 32,
       }}>
-        <div style={{ fontSize: 48 }}>⚠️</div>
-        <div style={{ fontSize: 17, color: '#ff4d4f', textAlign: 'center', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 17, color: 'var(--text-1)', textAlign: 'center', lineHeight: 1.6 }}>
           {error}
         </div>
         <button
@@ -125,7 +125,7 @@ export default function App() {
           }}
           style={{
             height: 50, padding: '0 32px', borderRadius: 14, border: 'none',
-            background: '#1677ff', color: '#fff', fontSize: 18,
+            background: 'var(--green)', color: '#fff', fontSize: 16,
             fontWeight: 700, cursor: 'pointer',
           }}
         >
@@ -135,30 +135,31 @@ export default function App() {
     )
   }
 
-  // ── 正常界面 ────────────────────────────────────────────
+  // ── 正常界面 ──
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: '#f5f5f5' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--bg)' }}>
       {/* 顶部 Header */}
       <div style={{
-        height: 'var(--header-h)', background: '#fff',
-        display: 'flex', alignItems: 'center', padding: '0 20px',
-        borderBottom: '1px solid #f0f0f0',
+        height: 'var(--header-h)', background: 'var(--bg)',
+        display: 'flex', alignItems: 'flex-end', padding: '0 18px 10px',
+        borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, zIndex: 100,
+        justifyContent: 'space-between',
       }}>
-        <span style={{ fontSize: 22, marginRight: 8 }}>🏠</span>
-        <span style={{ fontSize: 19, fontWeight: 800, color: '#1a1a1a', letterSpacing: 1 }}>
-          民宿管家
-        </span>
-        {/* 实时连接状态 */}
-        <div style={{
-          marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
-          fontSize: 12, color: realtimeOk ? '#52c41a' : '#fa8c16',
-        }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: realtimeOk ? '#52c41a' : '#fa8c16',
-          }} />
-          {realtimeOk ? '实时同步' : '离线模式'}
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--green2)', letterSpacing: 3, lineHeight: 1 }}>
+            民宿管家
+          </div>
+          <div style={{ fontSize: 8, letterSpacing: 2.5, color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 2 }}>
+            Homestay Manager
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <Bell size={16} color="var(--text-3)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: realtimeOk ? 'var(--green)' : 'var(--warm)' }}>
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: realtimeOk ? 'var(--green)' : 'var(--warm)' }} />
+            {realtimeOk ? '实时同步' : '离线模式'}
+          </div>
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export default function App() {
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 540,
-        background: '#fff', borderTop: '1px solid #f0f0f0',
+        background: 'var(--card-bg)', borderTop: '1px solid var(--border)',
         display: 'flex',
         height: 'calc(var(--tab-h) + env(safe-area-inset-bottom, 0px))',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -191,21 +192,18 @@ export default function App() {
                 flex: 1, border: 'none', background: 'transparent',
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', padding: '6px 0', gap: 3,
-                position: 'relative',
+                cursor: 'pointer', padding: '6px 0', gap: 4,
               }}
             >
-              {active && (
-                <div style={{
-                  position: 'absolute', top: 0, width: 32, height: 3,
-                  background: '#1677ff', borderRadius: '0 0 4px 4px',
-                }} />
-              )}
-              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              <t.Icon
+                size={20}
+                strokeWidth={active ? 2.2 : 1.8}
+                color={active ? 'var(--green)' : 'var(--text-3)'}
+              />
               <span style={{
                 fontSize: 11,
                 fontWeight: active ? 700 : 400,
-                color: active ? '#1677ff' : '#8c8c8c',
+                color: active ? 'var(--green)' : 'var(--text-3)',
               }}>
                 {t.label}
               </span>
