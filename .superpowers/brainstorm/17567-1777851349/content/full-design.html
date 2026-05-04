@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>民宿管家 · 完整设计方案</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background: #edeae3;
+  color: #2d2926;
+  padding: 28px 16px 80px;
+}
+
+/* ── Page Title ── */
+.page-title { text-align:center; font-size:22px; font-weight:700; margin-bottom:6px; }
+.page-sub   { text-align:center; font-size:14px; color:#9a8e85; margin-bottom:36px; }
+
+/* ── Section ── */
+.section { margin-bottom: 44px; }
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  color: #3c6652; text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px; background: #d5d0c8;
+}
+
+/* ── Design Token Block ── */
+.token-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 8px; margin-bottom: 16px;
+}
+.token-swatch {
+  border-radius: 12px; height: 56px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.token-swatch span { font-size: 10px; font-weight: 600; }
+.token-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.token-item {
+  background: #fff; border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+.token-item .k { font-size: 11px; color: #9a8e85; margin-bottom: 3px; }
+.token-item .v { font-size: 13px; font-weight: 600; color: #2d2926; }
+
+/* ── Phone Screens ── */
+.screens-row {
+  display: flex; gap: 16px; overflow-x: auto;
+  padding-bottom: 8px; scroll-snap-type: x mandatory;
+}
+.screen-wrap {
+  flex-shrink: 0; scroll-snap-align: start;
+  width: 220px;
+}
+.screen-label {
+  text-align: center; font-size: 12px; color: #9a8e85;
+  margin-bottom: 8px; font-weight: 500;
+}
+.phone {
+  width: 220px; border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  background: #f4f2ed;
+}
+
+/* ── Design Tokens ── */
+:root {
+  --bg:      #f4f2ed;
+  --bg2:     #edeae3;
+  --card:    #ffffff;
+  --green:   #3c6652;
+  --green2:  #2a4a3a;
+  --green-l: #e2ede7;
+  --border:  #e2ddd5;
+  --t1:      #2d2926;
+  --t2:      #6b6560;
+  --t3:      #9a8e85;
+}
+
+/* ── Shared phone inner ── */
+.ph-statusbar {
+  height: 26px; background: var(--bg);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 11px; font-weight: 600; color: var(--t2);
+}
+.ph-header {
+  background: var(--bg);
+  padding: 8px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.ph-logo {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.ph-logo-main {
+  font-size: 18px; font-weight: 800;
+  color: var(--green2);
+  letter-spacing: 3px;
+}
+.ph-logo-sub {
+  font-size: 9px; letter-spacing: 2px; color: var(--t3);
+  text-transform: uppercase;
+}
+.ph-header-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.ph-sync {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 9px; color: var(--green);
+}
+.ph-sync-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green);
+}
+.ph-body { padding: 12px 10px 0; background: var(--bg); }
+.ph-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 16px rgba(42,74,58,0.08);
+}
+.ph-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 10px;
+}
+.ph-name { font-size: 14px; font-weight: 700; color: var(--t1); }
+.ph-room { font-size: 10px; color: var(--t3); margin-top: 1px; }
+.ph-amount { font-size: 16px; font-weight: 800; color: var(--green); }
+.ph-dates { font-size: 10px; color: var(--t3); margin-top: 1px; text-align: right; }
+.ph-card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.ph-tag {
+  font-size: 10px; padding: 3px 9px;
+  border-radius: 999px; font-weight: 600;
+}
+.ph-tag-green { background: var(--green-l); color: var(--green); }
+.ph-tag-warm  { background: #fdf2e4; color: #b5804d; }
+.ph-source { font-size: 9px; color: var(--t3); }
+
+.ph-tabbar {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding: 8px 0 10px;
+  margin-top: 2px;
+}
+.ph-tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+}
+.ph-tab-icon { font-size: 14px; line-height: 1; }
+.ph-tab-lbl  { font-size: 8px; font-weight: 500; }
+.ph-tab-active .ph-tab-icon { color: var(--green); }
+.ph-tab-active .ph-tab-lbl  { color: var(--green); font-weight: 700; }
+.ph-tab-inactive .ph-tab-icon { color: var(--t3); }
+.ph-tab-inactive .ph-tab-lbl  { color: var(--t3); }
+
+/* Calendar screen */
+.ph-cal-header {
+  padding: 10px 14px 8px;
+  font-size: 13px; font-weight: 700; color: var(--t1);
+}
+.ph-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px; padding: 0 10px 10px;
+}
+.ph-cal-day {
+  aspect-ratio: 1; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--t2); font-weight: 500;
+}
+.ph-cal-hdr { color: var(--t3); font-size: 8px; font-weight: 600; }
+.ph-cal-booked { background: var(--green-l); color: var(--green); font-weight: 700; }
+.ph-cal-today  { background: var(--green); color: #fff; font-weight: 700; border-radius: 50%; }
+.ph-cal-range  { background: rgba(60,102,82,0.12); color: var(--green); }
+
+/* Add Booking screen */
+.ph-form { padding: 10px 12px; }
+.ph-form-title { font-size: 15px; font-weight: 700; color: var(--t1); margin-bottom: 14px; }
+.ph-field { margin-bottom: 12px; }
+.ph-field-label { font-size: 10px; color: var(--t3); margin-bottom: 4px; font-weight: 600; letter-spacing: 0.5px; }
+.ph-field-input {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 9px 12px;
+  font-size: 12px; color: var(--t1);
+}
+.ph-field-input.filled { border-color: var(--green); color: var(--t1); }
+.ph-btn {
+  background: var(--green); color: #fff;
+  border-radius: 14px; padding: 11px 0;
+  text-align: center; font-size: 13px; font-weight: 700;
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(60,102,82,0.28);
+}
+
+/* Revenue screen */
+.ph-rev-header { padding: 10px 14px 6px; }
+.ph-rev-card {
+  background: var(--green2); border-radius: 16px;
+  margin: 0 10px 12px; padding: 14px;
+  color: #fff;
+}
+.ph-rev-month { font-size: 10px; opacity: 0.7; letter-spacing: 1px; margin-bottom: 4px; }
+.ph-rev-amount { font-size: 22px; font-weight: 800; margin-bottom: 2px; }
+.ph-rev-sub { font-size: 10px; opacity: 0.65; }
+.ph-rev-row {
+  display: flex; justify-content: space-between;
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.ph-rev-row:last-child { border-bottom: none; }
+
+/* Properties screen */
+.ph-prop-card {
+  background: var(--card); border-radius: 16px;
+  margin: 0 10px 10px; overflow: hidden;
+  box-shadow: 0 2px 16px rgba(42,74,58,0.07);
+}
+.ph-prop-img {
+  height: 72px;
+  background: linear-gradient(135deg, #a3c4b0, #3c6652);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.ph-prop-body { padding: 10px 12px; }
+.ph-prop-name { font-size: 13px; font-weight: 700; color: var(--t1); }
+.ph-prop-meta { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.ph-prop-tags { display: flex; gap: 5px; margin-top: 7px; }
+
+/* Approve section */
+.approve-section {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  text-align: center;
+}
+.approve-q { font-size: 16px; font-weight: 700; color: var(--t1); margin-bottom: 8px; }
+.approve-sub { font-size: 13px; color: #9a8e85; line-height: 1.6; }
+.approve-btns { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+.approve-btn {
+  padding: 11px 28px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  border: none; transition: transform 0.15s;
+}
+.approve-btn:hover { transform: scale(1.03); }
+.approve-btn-yes { background: #3c6652; color: #fff; box-shadow: 0 4px 16px rgba(60,102,82,0.3); }
+.approve-btn-no  { background: #f0ece6; color: #6b6560; }
+
+/* Icon SVG helper */
+.icon { display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="page-title">民宿管家 · 设计方案</div>
+<div class="page-sub">墨绿静谧 · 线条图标 · 品牌 Logo · 轻盈悬浮卡片</div>
+
+<!-- ── 1. Design Tokens ── -->
+<div class="section">
+  <div class="section-label">色彩系统</div>
+  <div class="token-grid">
+    <div class="token-swatch" style="background:#f4f2ed; border: 1px solid #e2ddd5;">
+      <span style="color:#9a8e85;">底色</span>
+    </div>
+    <div class="token-swatch" style="background:#e2ede7;">
+      <span style="color:#3c6652;">绿浅</span>
+    </div>
+    <div class="token-swatch" style="background:#a3c4b0;">
+      <span style="color:#fff;">绿中</span>
+    </div>
+    <div class="token-swatch" style="background:#3c6652;">
+      <span style="color:#fff;">主绿</span>
+    </div>
+    <div class="token-swatch" style="background:#2a4a3a;">
+      <span style="color:#fff;">深绿</span>
+    </div>
+  </div>
+  <div class="token-row">
+    <div class="token-item">
+      <div class="k">字体主色</div>
+      <div class="v" style="color:#2d2926;">#2d2926 近黑</div>
+    </div>
+    <div class="token-item">
+      <div class="k">字体辅色</div>
+      <div class="v" style="color:#9a8e85;">#9a8e85 暖灰</div>
+    </div>
+    <div class="token-item">
+      <div class="k">卡片背景</div>
+      <div class="v">#ffffff 纯白</div>
+    </div>
+    <div class="token-item">
+      <div class="k">圆角半径</div>
+      <div class="v">16px / 20px</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 2. All 5 Screens ── -->
+<div class="section">
+  <div class="section-label">五个页面效果</div>
+  <div class="screens-row">
+
+    <!-- Screen 1: 预订记录 (home-like) -->
+    <div class="screen-wrap">
+      <div class="screen-label">预订记录</div>
+      <div class="phone">
+        <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+        <div class="ph-header">
+          <div class="ph-logo">
+            <div class="ph-logo-main">民宿管家</div>
+            <div class="ph-logo-sub">Homestay Manager</div>
+          </div>
+          <div class="ph-header-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+          </div>
+        </div>
+        <div class="ph-body">
+          <div class="ph-card">
+            <div class="ph-card-top">
+              <div><div class="ph-name">林小雅</div><div class="ph-room">竹间客房 · 2晚</div></div>
+              <div><div class="ph-amount">¥ 680</div><div class="ph-dates">5/12 — 5/14</div></div>
+            </div>
+            <div class="ph-card-bottom">
+              <span class="ph-tag ph-tag-green">已确认</span>
+              <span class="ph-source">抖音来源</span>
+            </div>
+          </div>
+          <div class="ph-card">
+            <div class="ph-card-top">
+              <div><div class="ph-name">张敏然</div><div class="ph-room">山景大床 · 3晚</div></div>
+              <div><div class="ph-amount">¥ 1,290</div><div class="ph-dates">5/16 — 5/19</div></div>
+            </div>
+            <div class="ph-card-bottom">
+              <span class="ph-tag ph-tag-warm">待确认</span>
+              <span class="ph-source">民宿平台</span>
+            </div>
+          </div>
+          <div class="ph-card" style="opacity:0.6;">
+            <div class="ph-card-top">
+              <div><div class="ph-name">王慧慧</div><div class="ph-room">花园套间 · 1晚</div></div>
+              <div><div class="ph-amount">¥ 480</div><div class="ph-dates">5/20 — 5/21</div></div>
+            </div>
+            <div class="ph-card-bottom">
+              <span class="ph-tag ph-tag-green">已确认</span>
+              <span class="ph-source">微信直订</span>
+            </div>
+          </div>
+        </div>
+        <div class="ph-tabbar">
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="ph-tab-lbl">新增</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="ph-tab-lbl">日历</span>
+          </div>
+          <div class="ph-tab ph-tab-active">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span class="ph-tab-lbl">记录</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="ph-tab-lbl">房源</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="ph-tab-lbl">收益</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: 新增预订 -->
+    <div class="screen-wrap">
+      <div class="screen-label">新增预订</div>
+      <div class="phone">
+        <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+        <div class="ph-header">
+          <div class="ph-logo">
+            <div class="ph-logo-main">民宿管家</div>
+            <div class="ph-logo-sub">Homestay Manager</div>
+          </div>
+          <div class="ph-header-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+          </div>
+        </div>
+        <div class="ph-form">
+          <div class="ph-form-title">新增预订</div>
+          <div class="ph-field">
+            <div class="ph-field-label">选择房源</div>
+            <div class="ph-field-input filled" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>竹间客房</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3c6652" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="ph-field">
+            <div class="ph-field-label">客人姓名</div>
+            <div class="ph-field-input filled">林小雅</div>
+          </div>
+          <div class="ph-field">
+            <div class="ph-field-label">入住 / 退房</div>
+            <div class="ph-field-input" style="display:flex;justify-content:space-between;align-items:center; border-color:#e2ddd5;">
+              <span style="color:#9a8e85;">选择日期范围</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+            </div>
+          </div>
+          <div class="ph-field">
+            <div class="ph-field-label">收款金额</div>
+            <div class="ph-field-input" style="border-color:#e2ddd5; color:#9a8e85;">¥ 输入金额</div>
+          </div>
+          <div class="ph-btn">确认新增</div>
+        </div>
+        <div class="ph-tabbar">
+          <div class="ph-tab ph-tab-active">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="ph-tab-lbl">新增</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="ph-tab-lbl">日历</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="ph-tab-lbl">记录</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="ph-tab-lbl">房源</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="ph-tab-lbl">收益</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 3: 排期日历 -->
+    <div class="screen-wrap">
+      <div class="screen-label">排期日历</div>
+      <div class="phone">
+        <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+        <div class="ph-header">
+          <div class="ph-logo">
+            <div class="ph-logo-main">民宿管家</div>
+            <div class="ph-logo-sub">Homestay Manager</div>
+          </div>
+          <div class="ph-header-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+          </div>
+        </div>
+        <div style="background:var(--bg); padding: 10px 14px 4px;">
+          <div style="font-size:14px; font-weight:700; color:#2d2926; margin-bottom:2px;">2025年 5月</div>
+          <div style="font-size:10px; color:#9a8e85;">已排 8 单 · 入住率 72%</div>
+        </div>
+        <div class="ph-cal-grid" style="padding: 6px 10px 6px;">
+          <div class="ph-cal-day ph-cal-hdr">日</div>
+          <div class="ph-cal-day ph-cal-hdr">一</div>
+          <div class="ph-cal-day ph-cal-hdr">二</div>
+          <div class="ph-cal-day ph-cal-hdr">三</div>
+          <div class="ph-cal-day ph-cal-hdr">四</div>
+          <div class="ph-cal-day ph-cal-hdr">五</div>
+          <div class="ph-cal-day ph-cal-hdr">六</div>
+          <div class="ph-cal-day" style="color:#ccc;"></div>
+          <div class="ph-cal-day" style="color:#ccc;"></div>
+          <div class="ph-cal-day" style="color:#ccc;"></div>
+          <div class="ph-cal-day">1</div>
+          <div class="ph-cal-day">2</div>
+          <div class="ph-cal-day ph-cal-booked">3</div>
+          <div class="ph-cal-day ph-cal-booked">4</div>
+          <div class="ph-cal-day ph-cal-booked">5</div>
+          <div class="ph-cal-day ph-cal-booked">6</div>
+          <div class="ph-cal-day">7</div>
+          <div class="ph-cal-day">8</div>
+          <div class="ph-cal-day">9</div>
+          <div class="ph-cal-day">10</div>
+          <div class="ph-cal-day">11</div>
+          <div class="ph-cal-day ph-cal-today">12</div>
+          <div class="ph-cal-day ph-cal-range">13</div>
+          <div class="ph-cal-day ph-cal-range">14</div>
+          <div class="ph-cal-day">15</div>
+          <div class="ph-cal-day">16</div>
+          <div class="ph-cal-day ph-cal-booked">17</div>
+          <div class="ph-cal-day ph-cal-booked">18</div>
+          <div class="ph-cal-day ph-cal-booked">19</div>
+          <div class="ph-cal-day ph-cal-booked">20</div>
+          <div class="ph-cal-day ph-cal-booked">21</div>
+          <div class="ph-cal-day">22</div>
+          <div class="ph-cal-day">23</div>
+          <div class="ph-cal-day">24</div>
+          <div class="ph-cal-day">25</div>
+          <div class="ph-cal-day">26</div>
+          <div class="ph-cal-day">27</div>
+          <div class="ph-cal-day">28</div>
+        </div>
+        <!-- Legend -->
+        <div style="display:flex;gap:10px;padding:0 14px 8px;font-size:9px;color:#9a8e85;">
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#e2ede7;border-radius:2px;display:inline-block;"></span>已预订</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#3c6652;border-radius:50%;display:inline-block;"></span>今天</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:rgba(60,102,82,0.12);border-radius:2px;display:inline-block;"></span>待确认</span>
+        </div>
+        <div class="ph-tabbar">
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="ph-tab-lbl">新增</span>
+          </div>
+          <div class="ph-tab ph-tab-active">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="ph-tab-lbl">日历</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span class="ph-tab-lbl">记录</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="ph-tab-lbl">房源</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="ph-tab-lbl">收益</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 4: 收益明细 -->
+    <div class="screen-wrap">
+      <div class="screen-label">收益明细</div>
+      <div class="phone">
+        <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+        <div class="ph-header">
+          <div class="ph-logo">
+            <div class="ph-logo-main">民宿管家</div>
+            <div class="ph-logo-sub">Homestay Manager</div>
+          </div>
+          <div class="ph-header-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+          </div>
+        </div>
+        <div class="ph-rev-header">
+          <div class="ph-rev-card">
+            <div class="ph-rev-month">2025年 5月</div>
+            <div class="ph-rev-amount">¥ 12,680</div>
+            <div class="ph-rev-sub">收入 ¥14,200 · 支出 ¥1,520</div>
+          </div>
+        </div>
+        <div style="background:#fff; border-radius:16px; margin:0 10px; overflow:hidden; box-shadow:0 2px 16px rgba(42,74,58,0.07);">
+          <div class="ph-rev-row">
+            <span style="color:#2d2926; font-weight:600;">竹间客房</span>
+            <span style="color:#3c6652; font-weight:700;">¥ 4,200</span>
+          </div>
+          <div class="ph-rev-row">
+            <span style="color:#2d2926; font-weight:600;">山景大床</span>
+            <span style="color:#3c6652; font-weight:700;">¥ 5,880</span>
+          </div>
+          <div class="ph-rev-row">
+            <span style="color:#2d2926; font-weight:600;">花园套间</span>
+            <span style="color:#3c6652; font-weight:700;">¥ 4,120</span>
+          </div>
+          <div class="ph-rev-row" style="border-top: 1px solid #e2ede7;">
+            <span style="color:#9a8e85;">运营支出</span>
+            <span style="color:#b5804d; font-weight:600;">- ¥1,520</span>
+          </div>
+        </div>
+        <div class="ph-tabbar" style="margin-top:10px;">
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="ph-tab-lbl">新增</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+            <span class="ph-tab-lbl">日历</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span class="ph-tab-lbl">记录</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="ph-tab-lbl">房源</span>
+          </div>
+          <div class="ph-tab ph-tab-active">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="ph-tab-lbl">收益</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: 房源管理 -->
+    <div class="screen-wrap">
+      <div class="screen-label">房源管理</div>
+      <div class="phone">
+        <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+        <div class="ph-header">
+          <div class="ph-logo">
+            <div class="ph-logo-main">民宿管家</div>
+            <div class="ph-logo-sub">Homestay Manager</div>
+          </div>
+          <div class="ph-header-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+            <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+          </div>
+        </div>
+        <div style="padding: 8px 10px 0;">
+          <div class="ph-prop-card">
+            <div class="ph-prop-img">🏯</div>
+            <div class="ph-prop-body">
+              <div class="ph-prop-name">竹间客房</div>
+              <div class="ph-prop-meta">日租 ¥340 · 月租 ¥6,200</div>
+              <div class="ph-prop-tags">
+                <span class="ph-tag ph-tag-green" style="font-size:9px;">上架中</span>
+                <span class="ph-tag" style="background:#f4f2ed;color:#9a8e85;font-size:9px;">双人房</span>
+              </div>
+            </div>
+          </div>
+          <div class="ph-prop-card">
+            <div class="ph-prop-img" style="background:linear-gradient(135deg,#c4b49a,#8a6a4a);">🌄</div>
+            <div class="ph-prop-body">
+              <div class="ph-prop-name">山景大床房</div>
+              <div class="ph-prop-meta">日租 ¥430 · 月租 ¥7,800</div>
+              <div class="ph-prop-tags">
+                <span class="ph-tag ph-tag-green" style="font-size:9px;">上架中</span>
+                <span class="ph-tag" style="background:#f4f2ed;color:#9a8e85;font-size:9px;">大床房</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ph-tabbar" style="margin-top:6px;">
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span class="ph-tab-lbl">新增</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+            <span class="ph-tab-lbl">日历</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span class="ph-tab-lbl">记录</span>
+          </div>
+          <div class="ph-tab ph-tab-active">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="ph-tab-lbl">房源</span>
+          </div>
+          <div class="ph-tab ph-tab-inactive">
+            <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="ph-tab-lbl">收益</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div style="text-align:center;font-size:12px;color:#9a8e85;margin-top:8px;">← 左右滑动查看全部页面 →</div>
+</div>
+
+<!-- ── 3. Typography ── -->
+<div class="section">
+  <div class="section-label">字体层级</div>
+  <div style="background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <div style="font-size:20px; font-weight:800; color:#2a4a3a; letter-spacing:2px; margin-bottom:12px;">民宿管家 <span style="font-size:11px;letter-spacing:3px;font-weight:400;color:#9a8e85;">HOMESTAY MANAGER</span></div>
+    <div style="font-size:16px; font-weight:700; color:#2d2926; margin-bottom:8px;">页面标题 · 16px Bold</div>
+    <div style="font-size:14px; font-weight:600; color:#2d2926; margin-bottom:8px;">卡片主文字 · 14px SemiBold</div>
+    <div style="font-size:13px; color:#6b6560; margin-bottom:8px;">次要信息 · 13px Regular · 暖灰色</div>
+    <div style="font-size:11px; color:#9a8e85; letter-spacing:0.5px;">辅助标注 · 11px · 浅灰</div>
+  </div>
+</div>
+
+<!-- ── 4. Approval ── -->
+<div class="approve-section">
+  <div class="approve-q">这个方案的整体感觉对吗？</div>
+  <div class="approve-sub">可以告诉我哪里想调整，比如<br>「顶栏太高了」「绿色再深一点」「卡片阴影减淡」</div>
+  <div class="approve-btns">
+    <button class="approve-btn approve-btn-yes" onclick="sendApproval('yes')">✓ 确认，开始写设计文档</button>
+    <button class="approve-btn approve-btn-no" onclick="sendApproval('no')">需要调整</button>
+  </div>
+</div>
+
+<script>
+function sendApproval(choice) {
+  const text = choice === 'yes' ? '确认方案' : '需要调整';
+  try {
+    fetch('/__event', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'click', choice, text, timestamp: Date.now() })
+    });
+  } catch(e) {}
+  document.querySelector('.approve-section').innerHTML =
+    '<div style="font-size:32px;margin-bottom:8px;">' + (choice==='yes'?'✅':'✏️') + '</div>' +
+    '<div style="font-size:15px;font-weight:700;color:#2d2926;">' + text + '</div>' +
+    '<div style="font-size:13px;color:#9a8e85;margin-top:6px;">请在聊天框告诉我</div>';
+}
+</script>
+</body>
+</html>

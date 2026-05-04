@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排期日历 v7 · 表头与格子一体滚动</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background: #e8e4dc;
+  padding: 28px 16px 80px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+:root {
+  --bg:     #f4f2ed;
+  --card:   #ffffff;
+  --green2: #2a4a3a;
+  --border: #e2ddd5;
+  --t1:     #2d2926;
+  --t2:     #6b6560;
+  --t3:     #9a8e85;
+  --today:  #ff3b30;
+
+  --r0: #3c6652;
+  --r1: #c9a87c;
+  --r2: #7aab94;
+  --r3: #2a4a3a;
+
+  --row-h:  26px;
+  --date-w: 34px;
+  --col-w:  44px;   /* (210 - 34) / 4 = 44px, 4列正好撑满，更多列横滑 */
+  --bk-pad: 2px;
+}
+
+.phone {
+  width: 210px;
+  border-radius: 28px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  background: var(--bg);
+}
+.ph-statusbar {
+  height: 24px; background: var(--bg);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; font-size: 10px; font-weight: 600; color: var(--t2);
+}
+.ph-header {
+  background: var(--bg); padding: 6px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.ph-logo-main { font-size: 16px; font-weight: 800; color: var(--green2); letter-spacing: 3px; }
+.ph-logo-sub  { font-size: 8px; letter-spacing: 2px; color: var(--t3); text-transform: uppercase; margin-top: 1px; }
+.ph-sync { display:flex; align-items:center; gap:3px; font-size:8px; color:var(--r0); }
+.ph-sync-dot { width:4px; height:4px; border-radius:50%; background:var(--r0); }
+
+.month-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px 5px; background: var(--bg);
+}
+.month-nav-arrow {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--t2);
+}
+
+/* ══════════════════════════════════════════
+   THE KEY: one single scroll container for
+   BOTH the sticky header row AND the grid rows.
+   overflow-x: auto  → horizontal scroll moves header + grid together
+   overflow-y: auto  → vertical scroll, header stays sticky at top
+   ══════════════════════════════════════════ */
+.gantt-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 320px;
+  background: var(--bg);
+  position: relative;
+  /* hide scrollbar visually but keep it functional */
+  scrollbar-width: none;
+}
+.gantt-scroll::-webkit-scrollbar { display: none; }
+
+/* inner wrapper — fills phone width, overflows right when rooms > 4 */
+.gantt-inner {
+  position: relative;
+  min-width: 100%;
+  width: max-content;
+}
+
+/* ── Sticky header row (inside scroll container) ── */
+.gantt-header {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card);
+  border-bottom: 2px solid #e2ede7;
+}
+.gh-date {
+  width: var(--date-w); flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 5px 0 3px;
+  font-size: 7px; color: var(--t3); text-align: center; font-weight: 600;
+  /* sticky left so date col stays visible when scrolling horizontally */
+  position: sticky; left: 0; z-index: 11;
+  background: var(--card);
+}
+.gh-room {
+  width: var(--col-w); flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding: 5px 1px 0; gap: 3px;
+}
+.gh-room:last-child { border-right: none; }
+.room-name {
+  font-size: 6.5px; font-weight: 700; color: var(--t1);
+  white-space: nowrap; text-align: center; line-height: 1;
+}
+.room-bar { width: 100%; height: 3px; }
+
+/* ── Grid rows ── */
+.gantt-grid { position: relative; }
+
+.grid-row { display: flex; height: var(--row-h); }
+.grid-row.today-row { border-bottom: 2.5px solid var(--today); }
+
+.grid-date {
+  width: var(--date-w); flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; color: var(--t2); font-weight: 500;
+  background: var(--bg);
+  /* sticky left: date column always visible on horizontal scroll */
+  position: sticky; left: 0; z-index: 3;
+}
+.grid-row.today-row .grid-date {
+  font-weight: 800; color: var(--today);
+  border-bottom: 2.5px solid var(--today);
+}
+.today-dot {
+  display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--today); margin-right: 2px; vertical-align: middle; margin-bottom: 1px;
+}
+.grid-cell {
+  width: var(--col-w); flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.grid-row.today-row .grid-cell { border-bottom: 2.5px solid var(--today); }
+.grid-cell:last-child { border-right: none; }
+
+/* ── Booking blocks (absolute over gantt-grid) ── */
+.bk {
+  position: absolute;
+  width: calc(var(--col-w) - var(--bk-pad)*2);
+  border-radius: 5px;
+  display: flex; align-items: flex-start;
+  padding: 3px 3px;
+  font-size: 6px; font-weight: 700; color: rgba(255,255,255,0.95);
+  overflow: hidden; z-index: 2; line-height: 1.2;
+}
+.col-0 { left: calc(var(--date-w) + 0*var(--col-w) + var(--bk-pad)); }
+.col-1 { left: calc(var(--date-w) + 1*var(--col-w) + var(--bk-pad)); }
+.col-2 { left: calc(var(--date-w) + 2*var(--col-w) + var(--bk-pad)); }
+.col-3 { left: calc(var(--date-w) + 3*var(--col-w) + var(--bk-pad)); }
+
+.r0 { background: var(--r0); }
+.r1 { background: var(--r1); }
+.r2 { background: var(--r2); color: rgba(42,74,58,0.9); }
+.r3 { background: var(--r3); }
+
+/* Tabbar */
+.ph-tabbar { background: var(--card); border-top: 1px solid var(--border); display: flex; padding: 6px 0 10px; }
+.ph-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.ph-tab svg { width:14px; height:14px; }
+.ph-tab-lbl { font-size:7px; font-weight:500; }
+.ph-tab-active svg { stroke: var(--r0); }
+.ph-tab-active .ph-tab-lbl { color: var(--r0); font-weight:700; }
+.ph-tab-inactive svg { stroke: var(--t3); }
+.ph-tab-inactive .ph-tab-lbl { color: var(--t3); }
+
+.legend {
+  display: flex; gap: 8px; padding: 6px 12px; background: var(--bg);
+  border-top: 1px solid var(--border); flex-wrap: wrap;
+}
+.legend-item { display:flex; align-items:center; gap:3px; font-size:7px; color:var(--t2); }
+.legend-swatch { width:10px; height:3px; border-radius:2px; }
+.legend-line   { width:12px; height:2px; background:var(--today); border-radius:1px; }
+
+.note {
+  background:#fff; border-radius:14px; padding:14px 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.08);
+  max-width:210px; font-size:12px; color:#6b6560; line-height:1.7;
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="ph-statusbar"><span>9:41</span><span>▐▐▐</span></div>
+
+  <div class="ph-header">
+    <div>
+      <div class="ph-logo-main">民宿管家</div>
+      <div class="ph-logo-sub">Homestay Manager</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+    </div>
+  </div>
+
+  <div class="month-nav">
+    <div class="month-nav-arrow">‹</div>
+    <div style="text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:var(--t1);">2025年 5月</div>
+      <div style="font-size:9px;color:var(--t3);">共 16 笔预订</div>
+    </div>
+    <div class="month-nav-arrow">›</div>
+  </div>
+
+  <!-- ══ Single scroll container: header + grid together ══ -->
+  <div class="gantt-scroll" id="ganttScroll">
+    <div class="gantt-inner">
+
+      <!-- Sticky header row (top:0, inside scroll) -->
+      <div class="gantt-header">
+        <div class="gh-date"></div>
+        <div class="gh-room">
+          <span class="room-name">竹间客房</span>
+          <div class="room-bar" style="background:var(--r0);"></div>
+        </div>
+        <div class="gh-room">
+          <span class="room-name">山景大床</span>
+          <div class="room-bar" style="background:var(--r1);"></div>
+        </div>
+        <div class="gh-room">
+          <span class="room-name">花园套间</span>
+          <div class="room-bar" style="background:var(--r2);"></div>
+        </div>
+        <div class="gh-room">
+          <span class="room-name">松林小屋</span>
+          <div class="room-bar" style="background:var(--r3);"></div>
+        </div>
+      </div>
+
+      <!-- Grid rows + booking overlay -->
+      <div class="gantt-grid">
+
+        <div class="grid-row"><div class="grid-date">5/1</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/2</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/3</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/4</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/5</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/6</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/7</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/8</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/9</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/10</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/11</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row today-row">
+          <div class="grid-date"><span class="today-dot"></span>12</div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        </div>
+        <div class="grid-row"><div class="grid-date">5/13</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/14</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/15</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/16</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/17</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/18</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/19</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-date">5/20</div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+
+        <!-- Booking blocks -->
+        <div class="bk r0 col-0" style="top:calc(2*26px+2px);  height:calc(3*26px-4px);">张敏然</div>
+        <div class="bk r0 col-0" style="top:calc(14*26px+2px); height:calc(3*26px-4px);">刘芳芳</div>
+        <div class="bk r1 col-1" style="top:calc(1*26px+2px);  height:calc(3*26px-4px);">林小雅</div>
+        <div class="bk r1 col-1" style="top:calc(8*26px+2px);  height:calc(4*26px-4px);">赵晓梅</div>
+        <div class="bk r1 col-1" style="top:calc(14*26px+2px); height:calc(4*26px-4px);">孙静</div>
+        <div class="bk r2 col-2" style="top:calc(4*26px+2px);  height:calc(3*26px-4px);">王慧慧</div>
+        <div class="bk r2 col-2" style="top:calc(9*26px+2px);  height:calc(3*26px-4px);">陈思雨</div>
+        <div class="bk r3 col-3" style="top:calc(7*26px+2px);  height:calc(4*26px-4px);">李梦然</div>
+        <div class="bk r3 col-3" style="top:calc(13*26px+2px); height:calc(4*26px-4px);">周晓云</div>
+
+      </div><!-- /gantt-grid -->
+    </div><!-- /gantt-inner -->
+  </div><!-- /gantt-scroll -->
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--r0);"></div>竹间客房</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--r1);"></div>山景大床</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--r2);"></div>花园套间</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--r3);"></div>松林小屋</div>
+    <div class="legend-item"><div class="legend-line"></div>今天</div>
+  </div>
+
+  <div class="ph-tabbar">
+    <div class="ph-tab ph-tab-inactive"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="ph-tab-lbl">新增</span></div>
+    <div class="ph-tab ph-tab-active"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ph-tab-lbl">日历</span></div>
+    <div class="ph-tab ph-tab-inactive"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><span class="ph-tab-lbl">记录</span></div>
+    <div class="ph-tab ph-tab-inactive"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="ph-tab-lbl">房源</span></div>
+    <div class="ph-tab ph-tab-inactive"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="ph-tab-lbl">收益</span></div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>修复说明：</strong>表头和格子现在在同一个滚动容器内。横向拖动时，房间名称和下方色条跟着格子一起移动，完全同步。<br><br>
+  日期列固定在左侧（sticky left），始终可见。
+</div>
+
+<script>
+  const s = document.getElementById('ganttScroll');
+  // scroll header height ≈ 26px, today = row index 11
+  const headerH = 26;
+  const ROW_H = 26, TODAY = 11;
+  const todayMid = headerH + TODAY * ROW_H + ROW_H / 2;
+  s.scrollTop = todayMid - s.clientHeight / 2;
+</script>
+</body>
+</html>

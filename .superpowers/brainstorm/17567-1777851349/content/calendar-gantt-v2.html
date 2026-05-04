@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排期日历 · 甘特图 v2</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background: #edeae3;
+  color: #2d2926;
+  padding: 24px 16px 60px;
+}
+.page-title { text-align:center; font-size:20px; font-weight:700; margin-bottom:6px; }
+.page-sub   { text-align:center; font-size:13px; color:#9a8e85; margin-bottom:32px; }
+
+:root {
+  --bg:      #f4f2ed;
+  --card:    #ffffff;
+  --green:   #3c6652;
+  --green2:  #2a4a3a;
+  --green-l: #e2ede7;
+  --border:  #e2ddd5;
+  --t1:      #2d2926;
+  --t2:      #6b6560;
+  --t3:      #9a8e85;
+  --today-line: #ff3b30;
+}
+
+.phone-wrap { max-width: 320px; margin: 0 auto; }
+.phone {
+  border-radius: 32px; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+  background: var(--bg);
+}
+
+.ph-statusbar {
+  height: 28px; background: var(--bg);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 11px; font-weight: 600; color: var(--t2);
+}
+.ph-header {
+  background: var(--bg);
+  padding: 8px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.ph-logo-main { font-size: 18px; font-weight: 800; color: var(--green2); letter-spacing: 3px; }
+.ph-logo-sub  { font-size: 9px; letter-spacing: 2px; color: var(--t3); text-transform: uppercase; margin-top: 1px; }
+.ph-sync { display:flex; align-items:center; gap:3px; font-size:9px; color:var(--green); }
+.ph-sync-dot { width:5px; height:5px; border-radius:50%; background:var(--green); }
+
+.month-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 18px 8px; background: var(--bg);
+}
+.month-nav-title { font-size: 15px; font-weight: 700; color: var(--t1); }
+.month-nav-sub   { font-size: 10px; color: var(--t3); margin-top: 1px; }
+.month-nav-arrow {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t2); font-size: 12px;
+}
+
+/* ── Gantt ── */
+.gantt-wrap { overflow-x: auto; background: var(--bg); max-height: 370px; overflow-y: auto; }
+.gantt { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.col-date { width: 44px; }
+.col-room { width: calc((100% - 44px) / 3); }
+
+.gantt thead th {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--card);
+  border-bottom: 2px solid var(--green-l);
+  padding: 8px 4px;
+  font-size: 9px; font-weight: 700;
+  color: var(--t2); text-align: center; letter-spacing: 0.5px;
+}
+.gantt thead th.th-date { color: var(--t3); font-weight: 600; border-right: 1px solid var(--border); }
+.gantt thead th.th-room { border-right: 1px solid var(--border); }
+.gantt thead th.th-room:last-child { border-right: none; }
+
+.gantt tbody td {
+  height: 28px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0; vertical-align: middle; position: relative;
+}
+.gantt tbody td:last-child { border-right: none; }
+.gantt tbody td.td-date {
+  text-align: center; font-size: 11px; color: var(--t2); font-weight: 500;
+  background: var(--bg); border-right: 1px solid var(--border);
+}
+.gantt tbody td.td-room { background: var(--card); }
+
+/* ── TODAY ROW: red line across ── */
+.gantt tbody tr.today td {
+  /* no background change */
+}
+/* The red line sits on the bottom edge of today's row */
+.gantt tbody tr.today td {
+  border-bottom: 2px solid var(--today-line);
+}
+/* Date cell for today */
+.gantt tbody tr.today td.td-date {
+  border-bottom: 2px solid var(--today-line);
+}
+/* Small red dot on the left of the date column */
+.today-dot {
+  display: inline-block;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--today-line);
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+/* Booking blocks */
+.bk {
+  position: absolute;
+  left: 3px; right: 3px;
+  border-radius: 6px;
+  display: flex; align-items: center;
+  padding: 0 6px;
+  font-size: 9px; font-weight: 700;
+  white-space: nowrap; overflow: hidden;
+  z-index: 2;
+  color: #fff;
+}
+.bk-top { top: 3px; bottom: 0; border-radius: 6px 6px 2px 2px; }
+.bk-mid { top: 0; bottom: 0; border-radius: 0; }
+.bk-bot { bottom: 3px; top: 0; border-radius: 2px 2px 6px 6px; }
+.bk-single { top: 3px; bottom: 3px; }
+
+.bk-a { background: var(--green); }
+.bk-b { background: #a3c4b0; }
+.bk-c { background: #c9a87c; }
+.bk-d { background: var(--green2); }
+
+/* Legend */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 10px 18px; background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+.legend-item { display:flex; align-items:center; gap:4px; font-size:9px; color:var(--t2); }
+.legend-dot  { width:10px; height:10px; border-radius:3px; }
+.legend-line { width:16px; height:2px; background:var(--today-line); border-radius:1px; }
+
+.ph-tabbar {
+  background: var(--card); border-top: 1px solid var(--border);
+  display: flex; padding: 8px 0 12px;
+}
+.ph-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.ph-tab-icon { font-size:15px; line-height:1; }
+.ph-tab-lbl  { font-size:8px; font-weight:500; }
+.ph-tab-active .ph-tab-icon { color: var(--green); }
+.ph-tab-active .ph-tab-lbl  { color: var(--green); font-weight:700; }
+.ph-tab-inactive .ph-tab-icon { color: var(--t3); }
+.ph-tab-inactive .ph-tab-lbl  { color: var(--t3); }
+
+.annotation {
+  background: #fff; border-radius: 16px; padding: 20px;
+  margin-top: 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  max-width: 320px; margin-left: auto; margin-right: auto;
+  margin-top: 24px;
+}
+.annotation h3 { font-size:15px; font-weight:700; color:#2d2926; margin-bottom:10px; }
+.annotation ul { list-style:none; display:flex; flex-direction:column; gap:7px; }
+.annotation li { font-size:13px; color:#6b6560; line-height:1.5; padding-left:16px; position:relative; }
+.annotation li::before { content:'·'; position:absolute; left:0; color:#3c6652; font-weight:900; }
+</style>
+</head>
+<body>
+
+<div class="page-title">排期日历 · 甘特图</div>
+<div class="page-sub">红线 = 今天，向下滚动看后续排期</div>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="ph-statusbar"><span>9:41</span><span style="letter-spacing:-1px;">▐▐▐</span></div>
+
+    <div class="ph-header">
+      <div>
+        <div class="ph-logo-main">民宿管家</div>
+        <div class="ph-logo-sub">Homestay Manager</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a8e85" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="ph-sync"><div class="ph-sync-dot"></div><span>实时同步</span></div>
+      </div>
+    </div>
+
+    <div class="month-nav">
+      <div class="month-nav-arrow">‹</div>
+      <div style="text-align:center;">
+        <div class="month-nav-title">2025年 5月</div>
+        <div class="month-nav-sub">共 14 笔预订</div>
+      </div>
+      <div class="month-nav-arrow">›</div>
+    </div>
+
+    <div class="gantt-wrap">
+      <table class="gantt">
+        <colgroup>
+          <col class="col-date">
+          <col class="col-room">
+          <col class="col-room">
+          <col class="col-room">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="th-date"></th>
+            <th class="th-room">竹间客房</th>
+            <th class="th-room">山景大床</th>
+            <th class="th-room">花园套间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-date">5/1</td>
+            <td class="td-room"></td><td class="td-room"></td><td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/2</td>
+            <td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-c bk-top">林小雅</div>
+            </td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/3</td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-top">张敏然</div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-c bk-mid"></div>
+            </td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/4</td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-mid"></div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-c bk-mid"></div>
+            </td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/5</td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-bot"></div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-c bk-bot"></div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-b bk-top">王慧慧</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-date">5/6</td>
+            <td class="td-room"></td><td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-b bk-bot"></div>
+            </td>
+          </tr>
+          <tr><td class="td-date">5/7</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+          <tr><td class="td-date">5/8</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+          <tr>
+            <td class="td-date">5/9</td>
+            <td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-d bk-top">赵晓梅</div>
+            </td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/10</td>
+            <td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-d bk-mid"></div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-top">陈思雨</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-date">5/11</td>
+            <td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-d bk-bot"></div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-mid"></div>
+            </td>
+          </tr>
+
+          <!-- ── TODAY: May 12 — red line on bottom border ── -->
+          <tr class="today">
+            <td class="td-date" style="color:#ff3b30; font-weight:800;">
+              <span class="today-dot"></span>12
+            </td>
+            <td class="td-room"></td>
+            <td class="td-room"></td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-bot"></div>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="td-date">5/13</td>
+            <td class="td-room"></td><td class="td-room"></td><td class="td-room"></td>
+          </tr>
+          <tr><td class="td-date">5/14</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+          <tr>
+            <td class="td-date">5/15</td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-c bk-top">刘芳芳</div>
+            </td>
+            <td class="td-room" style="position:relative;">
+              <div class="bk bk-a bk-top">孙静</div>
+            </td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/16</td>
+            <td class="td-room" style="position:relative;"><div class="bk bk-c bk-mid"></div></td>
+            <td class="td-room" style="position:relative;"><div class="bk bk-a bk-mid"></div></td>
+            <td class="td-room"></td>
+          </tr>
+          <tr>
+            <td class="td-date">5/17</td>
+            <td class="td-room" style="position:relative;"><div class="bk bk-c bk-bot"></div></td>
+            <td class="td-room" style="position:relative;"><div class="bk bk-a bk-bot"></div></td>
+            <td class="td-room"></td>
+          </tr>
+          <tr><td class="td-date">5/18</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+          <tr><td class="td-date">5/19</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+          <tr><td class="td-date">5/20</td><td class="td-room"></td><td class="td-room"></td><td class="td-room"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3c6652;"></div>已确认</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#c9a87c;"></div>包月</div>
+      <div class="legend-item"><div class="legend-line"></div>今天</div>
+    </div>
+
+    <div class="ph-tabbar">
+      <div class="ph-tab ph-tab-inactive">
+        <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="ph-tab-lbl">新增</span>
+      </div>
+      <div class="ph-tab ph-tab-active">
+        <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="ph-tab-lbl">日历</span>
+      </div>
+      <div class="ph-tab ph-tab-inactive">
+        <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        <span class="ph-tab-lbl">记录</span>
+      </div>
+      <div class="ph-tab ph-tab-inactive">
+        <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="ph-tab-lbl">房源</span>
+      </div>
+      <div class="ph-tab ph-tab-inactive">
+        <svg class="ph-tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="ph-tab-lbl">收益</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annotation">
+  <h3>本次修改</h3>
+  <ul>
+    <li>去掉"待确认"状态，图例只保留「已确认」和「包月」</li>
+    <li>今日行底部加红色横线（#ff3b30，同苹果日历），日期列加红点标注</li>
+    <li>状态 tag 相应简化：只剩「已确认」一种</li>
+  </ul>
+</div>
+
+</body>
+</html>

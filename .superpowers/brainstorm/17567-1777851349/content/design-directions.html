@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>民宿管家 · 设计方向对比</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: #f7f5f2;
+    color: #2d2926;
+    padding: 24px 16px 60px;
+    min-height: 100vh;
+  }
+
+  .page-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d2926;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .page-sub {
+    text-align: center;
+    font-size: 14px;
+    color: #9a8e85;
+    margin-bottom: 32px;
+  }
+
+  /* Direction Cards */
+  .directions {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .dir-card {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 3px solid transparent;
+  }
+  .dir-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+  .dir-card.selected { border-color: #2d2926; box-shadow: 0 8px 36px rgba(0,0,0,0.22); }
+
+  .dir-header {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .dir-badge {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .dir-meta h2 { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+  .dir-meta p { font-size: 13px; line-height: 1.5; opacity: 0.75; }
+
+  /* Palette Row */
+  .palette {
+    display: flex;
+    height: 8px;
+    margin: 0 20px 20px;
+    border-radius: 999px;
+    overflow: hidden;
+    gap: 2px;
+  }
+  .palette-swatch { flex: 1; border-radius: 999px; }
+
+  /* Phone Mockup */
+  .phone-wrap {
+    padding: 0 20px 24px;
+  }
+  .phone {
+    border-radius: 32px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    display: block;
+  }
+
+  /* ── Direction A: 暖山系 ── */
+  .a-bg    { background: #faf7f2; }
+  .a-head  { background: #faf7f2; border-bottom: 1px solid #ede8e0; }
+  .a-card  { background: #fff; border-radius: 16px; margin: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(139,110,80,0.08); }
+  .a-accent { color: #b5804d; }
+  .a-tab-active { color: #b5804d; }
+  .a-tab-bar { background: #fff; border-top: 1px solid #ede8e0; }
+  .a-tag { background: #f5ede0; color: #b5804d; border-radius: 20px; padding: 3px 10px; font-size: 12px; }
+  .a-btn { background: #b5804d; color: #fff; border-radius: 12px; padding: 10px 0; font-size: 14px; font-weight: 600; text-align: center; }
+  .a-dot { background: #b5804d; }
+
+  /* ── Direction B: 奶咖轻奢 ── */
+  .b-bg    { background: #f2efea; }
+  .b-head  { background: linear-gradient(135deg, #3d3530 0%, #5c4f46 100%); }
+  .b-card  { background: #fff; border-radius: 18px; margin: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(60,48,40,0.10); }
+  .b-accent { color: #3d3530; }
+  .b-tab-active { color: #c9a87c; }
+  .b-tab-bar { background: #3d3530; }
+  .b-tag { background: #f0e8dc; color: #8a6a4a; border-radius: 20px; padding: 3px 10px; font-size: 12px; }
+  .b-btn { background: linear-gradient(135deg, #c9a87c, #b5804d); color: #fff; border-radius: 12px; padding: 10px 0; font-size: 14px; font-weight: 600; text-align: center; }
+  .b-dot { background: #c9a87c; }
+
+  /* ── Direction C: 墨绿静谧 ── */
+  .c-bg    { background: #f4f2ed; }
+  .c-head  { background: #f4f2ed; border-bottom: 1px solid #e5e0d5; }
+  .c-card  { background: #fff; border-radius: 16px; margin: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(55,75,60,0.08); }
+  .c-accent { color: #3c6652; }
+  .c-tab-active { color: #3c6652; }
+  .c-tab-bar { background: #fff; border-top: 1px solid #e5e0d5; }
+  .c-tag { background: #e8f0ec; color: #3c6652; border-radius: 20px; padding: 3px 10px; font-size: 12px; }
+  .c-btn { background: #3c6652; color: #fff; border-radius: 12px; padding: 10px 0; font-size: 14px; font-weight: 600; text-align: center; }
+  .c-dot { background: #3c6652; }
+
+  /* Shared phone inner styles */
+  .ph-status { height: 28px; display: flex; align-items: center; padding: 0 16px; font-size: 12px; font-weight: 600; justify-content: space-between; }
+  .ph-header { padding: 10px 16px 12px; display: flex; align-items: center; justify-content: space-between; }
+  .ph-header-title { font-size: 17px; font-weight: 700; }
+  .ph-header-sub { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .ph-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .ph-content { padding: 4px 0 0; }
+  .card-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .card-guest { font-size: 15px; font-weight: 700; }
+  .card-room { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+  .card-amount { font-size: 17px; font-weight: 800; }
+  .card-dates { font-size: 12px; opacity: 0.55; margin-top: 4px; }
+  .card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .ph-tabbar { display: flex; padding: 8px 0 4px; }
+  .ph-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; }
+  .ph-tab-icon { font-size: 18px; line-height: 1; }
+  .ph-tab-lbl { font-size: 9px; }
+
+  /* Keywords */
+  .keywords {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 0 20px 20px;
+  }
+  .kw {
+    font-size: 12px; padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* Select hint */
+  .select-hint {
+    text-align: center;
+    font-size: 13px;
+    color: #9a8e85;
+    margin-top: 24px;
+  }
+  .select-hint strong { color: #2d2926; }
+
+  /* Selected overlay */
+  .selected-badge {
+    display: none;
+    position: absolute;
+    top: 14px; right: 14px;
+    background: #2d2926;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .dir-card.selected .selected-badge { display: block; }
+  .dir-card { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="page-title">民宿管家 · 设计方向</div>
+<div class="page-sub">点击卡片选择你喜欢的风格方向</div>
+
+<div class="directions">
+
+  <!-- ══ Direction A: 暖山系 ══ -->
+  <div class="dir-card" data-choice="a" onclick="selectDir(this)">
+    <div class="selected-badge">✓ 已选择</div>
+    <div class="dir-header a-bg">
+      <div class="dir-badge" style="background:#f5ede0;">🏔</div>
+      <div class="dir-meta">
+        <h2 style="color:#2d2926;">方向 A · 暖山系</h2>
+        <p style="color:#7a6a5a;">米白 · 暖棕 · 亚麻感 · 日式侘寂<br>像一本轻翻开的民宿杂志</p>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="palette-swatch" style="background:#faf7f2; flex:2;"></div>
+      <div class="palette-swatch" style="background:#ede8e0; flex:1.5;"></div>
+      <div class="palette-swatch" style="background:#d4b896; flex:1.5;"></div>
+      <div class="palette-swatch" style="background:#b5804d; flex:2;"></div>
+      <div class="palette-swatch" style="background:#8a5e36; flex:1;"></div>
+    </div>
+
+    <!-- Phone Mockup A -->
+    <div class="phone-wrap">
+      <div class="phone a-bg">
+        <div class="ph-status a-bg" style="color:#7a6a5a;">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div class="ph-header a-head">
+          <div>
+            <div class="ph-header-title" style="color:#2d2926; font-family:'Georgia',serif; font-style:italic;">民宿管家</div>
+            <div class="ph-header-sub" style="color:#9a8e85;">
+              <div class="ph-dot a-dot"></div>实时同步
+            </div>
+          </div>
+          <div style="font-size:20px;">🔔</div>
+        </div>
+        <div class="ph-content">
+          <div class="a-card">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926;">林小雅</div>
+                <div class="card-room" style="color:#9a8e85;">竹间客房 · 2晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount a-accent">¥ 680</div>
+                <div class="card-dates" style="color:#9a8e85;">5/12 — 5/14</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="a-tag">已确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">抖音来源</div>
+            </div>
+          </div>
+          <div class="a-card" style="margin-top:0;">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926;">张敏然</div>
+                <div class="card-room" style="color:#9a8e85;">山景大床房 · 3晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount a-accent">¥ 1,290</div>
+                <div class="card-dates" style="color:#9a8e85;">5/16 — 5/19</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="a-tag">待确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">民宿平台</div>
+            </div>
+          </div>
+          <div style="padding: 8px 12px 4px;">
+            <div class="a-btn">+ 新增预订</div>
+          </div>
+        </div>
+        <div class="ph-tabbar a-tab-bar">
+          <div class="ph-tab">
+            <div class="ph-tab-icon">＋</div>
+            <div class="ph-tab-lbl a-tab-active" style="font-weight:700;">新增</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.45;">📅</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">日历</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.45;">📋</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">记录</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.45;">🏠</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">房源</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.45;">💰</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">收益</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="keywords">
+      <span class="kw" style="background:#f5ede0; color:#b5804d;">米白底色</span>
+      <span class="kw" style="background:#f5ede0; color:#b5804d;">衬线标题字</span>
+      <span class="kw" style="background:#f5ede0; color:#b5804d;">暖棕强调色</span>
+      <span class="kw" style="background:#f5ede0; color:#b5804d;">亚麻质感卡片</span>
+      <span class="kw" style="background:#f5ede0; color:#b5804d;">日式侘寂</span>
+    </div>
+  </div>
+
+
+  <!-- ══ Direction B: 奶咖轻奢 ══ -->
+  <div class="dir-card" data-choice="b" onclick="selectDir(this)">
+    <div class="selected-badge">✓ 已选择</div>
+    <div class="dir-header b-bg">
+      <div class="dir-badge" style="background:#e8ddd4;">☕</div>
+      <div class="dir-meta">
+        <h2 style="color:#2d2926;">方向 B · 奶咖轻奢</h2>
+        <p style="color:#7a6a5a;">深棕顶栏 · 金棕渐变 · 轻奢高级感<br>像高端精品民宿的官网 App</p>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="palette-swatch" style="background:#f2efea; flex:2;"></div>
+      <div class="palette-swatch" style="background:#e0d5c8; flex:1;"></div>
+      <div class="palette-swatch" style="background:#c9a87c; flex:2;"></div>
+      <div class="palette-swatch" style="background:#8a6a4a; flex:1.5;"></div>
+      <div class="palette-swatch" style="background:#3d3530; flex:2;"></div>
+    </div>
+
+    <!-- Phone Mockup B -->
+    <div class="phone-wrap">
+      <div class="phone b-bg">
+        <div class="ph-status b-head" style="color:rgba(255,255,255,0.8);">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div class="ph-header b-head" style="padding-bottom:16px;">
+          <div>
+            <div class="ph-header-title" style="color:#fff; letter-spacing:1.5px; font-size:15px; text-transform:uppercase; font-weight:800;">民宿管家</div>
+            <div class="ph-header-sub" style="color:rgba(255,255,255,0.6);">
+              <div class="ph-dot b-dot"></div>实时同步
+            </div>
+          </div>
+          <div style="font-size:20px;">🔔</div>
+        </div>
+        <div class="ph-content b-bg">
+          <div class="b-card">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926;">林小雅</div>
+                <div class="card-room" style="color:#9a8e85;">竹间客房 · 2晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount b-accent" style="color:#8a6a4a;">¥ 680</div>
+                <div class="card-dates" style="color:#9a8e85;">5/12 — 5/14</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="b-tag">已确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">抖音来源</div>
+            </div>
+          </div>
+          <div class="b-card" style="margin-top:0;">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926;">张敏然</div>
+                <div class="card-room" style="color:#9a8e85;">山景大床房 · 3晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount b-accent" style="color:#8a6a4a;">¥ 1,290</div>
+                <div class="card-dates" style="color:#9a8e85;">5/16 — 5/19</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="b-tag">待确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">民宿平台</div>
+            </div>
+          </div>
+          <div style="padding: 8px 12px 4px;">
+            <div class="b-btn">+ 新增预订</div>
+          </div>
+        </div>
+        <div class="ph-tabbar b-tab-bar" style="padding-bottom:6px;">
+          <div class="ph-tab">
+            <div class="ph-tab-icon b-tab-active" style="color:#c9a87c; font-weight:900;">＋</div>
+            <div class="ph-tab-lbl b-tab-active" style="color:#c9a87c; font-weight:700;">新增</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4; color:#fff;">📅</div>
+            <div class="ph-tab-lbl" style="color:rgba(255,255,255,0.4);">日历</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4; color:#fff;">📋</div>
+            <div class="ph-tab-lbl" style="color:rgba(255,255,255,0.4);">记录</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4; color:#fff;">🏠</div>
+            <div class="ph-tab-lbl" style="color:rgba(255,255,255,0.4);">房源</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4; color:#fff;">💰</div>
+            <div class="ph-tab-lbl" style="color:rgba(255,255,255,0.4);">收益</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="keywords">
+      <span class="kw" style="background:#e8ddd4; color:#3d3530;">深棕顶栏</span>
+      <span class="kw" style="background:#e8ddd4; color:#3d3530;">金棕渐变按钮</span>
+      <span class="kw" style="background:#e8ddd4; color:#3d3530;">奶咖底色</span>
+      <span class="kw" style="background:#e8ddd4; color:#3d3530;">高级质感</span>
+      <span class="kw" style="background:#e8ddd4; color:#3d3530;">精品民宿感</span>
+    </div>
+  </div>
+
+
+  <!-- ══ Direction C: 墨绿静谧 ══ -->
+  <div class="dir-card" data-choice="c" onclick="selectDir(this)">
+    <div class="selected-badge">✓ 已选择</div>
+    <div class="dir-header c-bg">
+      <div class="dir-badge" style="background:#e2ede7;">🌿</div>
+      <div class="dir-meta">
+        <h2 style="color:#2d2926;">方向 C · 墨绿静谧</h2>
+        <p style="color:#7a6a5a;">米色底 · 墨绿强调 · 清透自然<br>像日式杂志页面，静而有力</p>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="palette-swatch" style="background:#f4f2ed; flex:2;"></div>
+      <div class="palette-swatch" style="background:#e5e0d5; flex:1;"></div>
+      <div class="palette-swatch" style="background:#a3c4b0; flex:1.5;"></div>
+      <div class="palette-swatch" style="background:#3c6652; flex:2;"></div>
+      <div class="palette-swatch" style="background:#2a4a3a; flex:1;"></div>
+    </div>
+
+    <!-- Phone Mockup C -->
+    <div class="phone-wrap">
+      <div class="phone c-bg">
+        <div class="ph-status c-bg" style="color:#7a6a5a;">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div class="ph-header c-head">
+          <div>
+            <div class="ph-header-title" style="color:#2d2926; font-weight:300; letter-spacing:2px; font-size:16px;">民宿管家</div>
+            <div class="ph-header-sub" style="color:#9a8e85;">
+              <div class="ph-dot c-dot"></div>实时同步
+            </div>
+          </div>
+          <div style="font-size:20px;">🔔</div>
+        </div>
+        <div class="ph-content">
+          <div class="c-card">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926; font-weight:600;">林小雅</div>
+                <div class="card-room" style="color:#9a8e85;">竹间客房 · 2晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount c-accent">¥ 680</div>
+                <div class="card-dates" style="color:#9a8e85;">5/12 — 5/14</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="c-tag">已确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">抖音来源</div>
+            </div>
+          </div>
+          <div class="c-card" style="margin-top:0;">
+            <div class="card-row">
+              <div>
+                <div class="card-guest" style="color:#2d2926; font-weight:600;">张敏然</div>
+                <div class="card-room" style="color:#9a8e85;">山景大床房 · 3晚</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="card-amount c-accent">¥ 1,290</div>
+                <div class="card-dates" style="color:#9a8e85;">5/16 — 5/19</div>
+              </div>
+            </div>
+            <div class="card-bottom">
+              <span class="c-tag">待确认</span>
+              <div style="font-size:11px; color:#b5b0aa;">民宿平台</div>
+            </div>
+          </div>
+          <div style="padding: 8px 12px 4px;">
+            <div class="c-btn">+ 新增预订</div>
+          </div>
+        </div>
+        <div class="ph-tabbar c-tab-bar">
+          <div class="ph-tab">
+            <div class="ph-tab-icon c-tab-active" style="color:#3c6652; font-weight:900;">＋</div>
+            <div class="ph-tab-lbl c-tab-active" style="color:#3c6652; font-weight:700;">新增</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4;">📅</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">日历</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4;">📋</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">记录</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4;">🏠</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">房源</div>
+          </div>
+          <div class="ph-tab">
+            <div class="ph-tab-icon" style="opacity:.4;">💰</div>
+            <div class="ph-tab-lbl" style="color:#b5b0aa;">收益</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="keywords">
+      <span class="kw" style="background:#e2ede7; color:#3c6652;">米色底色</span>
+      <span class="kw" style="background:#e2ede7; color:#3c6652;">墨绿强调</span>
+      <span class="kw" style="background:#e2ede7; color:#3c6652;">细线分割</span>
+      <span class="kw" style="background:#e2ede7; color:#3c6652;">清透自然</span>
+      <span class="kw" style="background:#e2ede7; color:#3c6652;">日式杂志感</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="select-hint">点击任意方向卡片选中，再在聊天框告诉我你的选择和感受</div>
+
+<script>
+function selectDir(el) {
+  document.querySelectorAll('.dir-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  // Record selection
+  const choice = el.dataset.choice;
+  const text = el.querySelector('h2').textContent;
+  if (window.__recordEvent) window.__recordEvent({ type: 'click', choice, text });
+  try {
+    fetch('/__event', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'click', choice, text, timestamp: Date.now() })
+    });
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
