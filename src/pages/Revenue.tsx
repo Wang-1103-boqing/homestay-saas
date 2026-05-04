@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Button } from 'antd'
-import { LeftOutlined, RightOutlined } from '@ant-design/icons'
+import { ChevronLeft, ChevronRight, Download, ChevronDown, ChevronUp } from 'lucide-react'
 import dayjs from 'dayjs'
 import * as XLSX from 'xlsx'
 import { useStore } from '../store/useStore'
@@ -12,11 +11,6 @@ const EXP_TYPE_LABEL: Record<string, string> = {
   cleaning:    '保洁',
 }
 
-function numColor(v: number) {
-  return v >= 0 ? '#52c41a' : '#ff4d4f'
-}
-
-// 按实际入住天数比例分摊某条预订在给定月份区间内的金额
 function proportionalIncome(b: Booking, mStart: dayjs.Dayjs, mEnd: dayjs.Dayjs): number {
   const totalDays = dayjs(b.checkOut).diff(dayjs(b.checkIn), 'day')
   if (totalDays <= 0) return 0
@@ -34,14 +28,22 @@ function getEffectiveRent(rentHistory: RentHistory[], propId: string, month: str
   return records[0]?.amount ?? 0
 }
 
+const NAV_BTN: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: 9,
+  background: 'var(--card-bg)', border: '1px solid var(--border)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', padding: 0,
+}
+
 export default function Revenue() {
   const { properties, bookings, expenses, rentHistory } = useStore()
   const [monthOffset, setMonthOffset] = useState(0)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
-  const baseMonth = dayjs().add(monthOffset, 'month').startOf('month')
-  const monthStr = baseMonth.format('YYYY-MM')
+  const baseMonth   = dayjs().add(monthOffset, 'month').startOf('month')
+  const monthStr    = baseMonth.format('YYYY-MM')
   const daysInMonth = baseMonth.daysInMonth()
+  const prevMonth   = baseMonth.subtract(1, 'month')
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -56,15 +58,12 @@ export default function Revenue() {
     [expenses, monthStr],
   )
 
-  // 计算某房源在任意月份的入住率
   const calcOccupancy = (propId: string, month: dayjs.Dayjs) => {
     const mStart = month
-    const days = month.daysInMonth()
-    const mEnd = month.add(days, 'day')
+    const days   = month.daysInMonth()
+    const mEnd   = month.add(days, 'day')
     const relevant = bookings.filter(
-      (b) => b.propertyId === propId &&
-        dayjs(b.checkIn).isBefore(mEnd) &&
-        dayjs(b.checkOut).isAfter(mStart),
+      (b) => b.propertyId === propId && dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart),
     )
     let booked = 0
     relevant.forEach((b) => {
@@ -75,57 +74,58 @@ export default function Revenue() {
     return { booked, days, rate: Math.min(100, Math.round((booked / days) * 100)) }
   }
 
-  const prevMonth = baseMonth.subtract(1, 'month')
+  const summary = useMemo(() => {
+    const mStart = baseMonth
+    const mEnd   = baseMonth.add(daysInMonth, 'day')
+    const totalIncome = Math.round(
+      bookings
+        .filter((b) => dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart))
+        .reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0),
+    )
+    const totalRent        = properties.reduce((s, p) => s + getEffectiveRent(rentHistory, p.id, monthStr), 0)
+    const totalUtility     = monthExpenses.filter((e) => e.type === 'utility').reduce((s, e) => s + e.amount, 0)
+    const totalMaintenance = monthExpenses.filter((e) => e.type === 'maintenance').reduce((s, e) => s + e.amount, 0)
+    const totalCleaning    = monthExpenses.filter((e) => e.type === 'cleaning').reduce((s, e) => s + e.amount, 0)
+    const totalCost        = totalRent + totalUtility + totalMaintenance + totalCleaning
+    return { totalIncome, totalRent, totalUtility, totalMaintenance, totalCleaning, totalCost, net: totalIncome - totalCost }
+  }, [bookings, baseMonth, daysInMonth, monthExpenses, properties, rentHistory, monthStr])
+
+  const propStats = useMemo(() => {
+    const mStart = baseMonth
+    const mEnd   = baseMonth.add(daysInMonth, 'day')
+    return properties.map((p) => {
+      const income  = Math.round(bookings.filter((b) => b.propertyId === p.id && dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart)).reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0))
+      const rent    = getEffectiveRent(rentHistory, p.id, monthStr)
+      const varExps = monthExpenses.filter((e) => e.propertyId === p.id)
+      const varCost = varExps.reduce((s, e) => s + e.amount, 0)
+      const cost    = rent + varCost
+      return { ...p, income, rent, varCost, cost, net: income - cost, exps: varExps }
+    })
+  }, [properties, bookings, baseMonth, daysInMonth, monthExpenses, rentHistory, monthStr])
 
   const handleExport = () => {
-    const mStart = baseMonth
-    const mEnd = baseMonth.add(daysInMonth, 'day')
+    const mStart  = baseMonth
+    const mEnd    = baseMonth.add(daysInMonth, 'day')
     const propMap = Object.fromEntries(properties.map((p) => [p.id, p.name]))
-
-    // Sheet 1：当月预订记录（所有与本月重叠的预订）
-    const overlapBookings = bookings.filter(
-      (b) => dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart),
-    )
+    const overlapBookings = bookings.filter((b) => dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart))
     const bookingRows = overlapBookings.map((b) => {
       const totalDays = dayjs(b.checkOut).diff(dayjs(b.checkIn), 'day')
       const ci = dayjs(b.checkIn).isBefore(mStart) ? mStart : dayjs(b.checkIn)
       const co = dayjs(b.checkOut).isAfter(mEnd) ? mEnd : dayjs(b.checkOut)
       const daysThisMonth = co.diff(ci, 'day')
       const allocated = totalDays > 0 ? Math.round(b.totalAmount * daysThisMonth / totalDays) : 0
-      return {
-        '房源': propMap[b.propertyId] ?? b.propertyId,
-        '客人姓名': b.guestName,
-        '入住日期': b.checkIn,
-        '退房日期': b.checkOut,
-        '总晚数': totalDays,
-        '本月入住天数': daysThisMonth,
-        '总金额': b.totalAmount,
-        '本月分摊金额': allocated,
-        '预订方式': b.bookingMode === 'monthly' ? '包月' : '按晚',
-        '备注': b.notes,
-      }
+      return { '房源': propMap[b.propertyId] ?? b.propertyId, '客人姓名': b.guestName, '入住日期': b.checkIn, '退房日期': b.checkOut, '总晚数': totalDays, '本月入住天数': daysThisMonth, '总金额': b.totalAmount, '本月分摊金额': allocated, '预订方式': b.bookingMode === 'monthly' ? '包月' : '按晚', '备注': b.notes }
     })
-
-    // Sheet 2：当月支出记录
-    const expRows = monthExpenses.map((e) => ({
-      '房源': propMap[e.propertyId] ?? e.propertyId,
-      '支出类型': EXP_TYPE_LABEL[e.type] ?? e.type,
-      '日期': e.date,
-      '金额': e.amount,
-      '说明': e.description,
-    }))
-
-    // Sheet 3：当月收益汇总
+    const expRows = monthExpenses.map((e) => ({ '房源': propMap[e.propertyId] ?? e.propertyId, '支出类型': EXP_TYPE_LABEL[e.type] ?? e.type, '日期': e.date, '金额': e.amount, '说明': e.description }))
     const summaryRows = [
       { '项目': '总收入（分摊）', '金额（元）': summary.totalIncome },
-      { '项目': '房租', '金额（元）': summary.totalRent },
-      { '项目': '物业水电暖气', '金额（元）': summary.totalUtility },
-      { '项目': '维修采购', '金额（元）': summary.totalMaintenance },
-      { '项目': '保洁', '金额（元）': summary.totalCleaning },
-      { '项目': '总成本', '金额（元）': summary.totalCost },
-      { '项目': '净收益', '金额（元）': summary.net },
+      { '项目': '房租',           '金额（元）': summary.totalRent },
+      { '项目': '物业水电暖气',   '金额（元）': summary.totalUtility },
+      { '项目': '维修采购',       '金额（元）': summary.totalMaintenance },
+      { '项目': '保洁',           '金额（元）': summary.totalCleaning },
+      { '项目': '总成本',         '金额（元）': summary.totalCost },
+      { '项目': '净收益',         '金额（元）': summary.net },
     ]
-
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bookingRows), '当月预订记录')
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expRows), '当月支出记录')
@@ -133,264 +133,147 @@ export default function Revenue() {
     XLSX.writeFile(wb, `民宿管家_${baseMonth.format('YYYY年M月')}.xlsx`)
   }
 
-  // 汇总数据
-  const summary = useMemo(() => {
-    const mStart = baseMonth
-    const mEnd = baseMonth.add(daysInMonth, 'day')
-    const totalIncome = Math.round(
-      bookings
-        .filter((b) => dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart))
-        .reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0),
-    )
-    const totalRent = properties.reduce(
-      (s, p) => s + getEffectiveRent(rentHistory, p.id, monthStr), 0,
-    )
-    const totalUtility = monthExpenses.filter((e) => e.type === 'utility').reduce((s, e) => s + e.amount, 0)
-    const totalMaintenance = monthExpenses.filter((e) => e.type === 'maintenance').reduce((s, e) => s + e.amount, 0)
-    const totalCleaning = monthExpenses.filter((e) => e.type === 'cleaning').reduce((s, e) => s + e.amount, 0)
-    const totalCost = totalRent + totalUtility + totalMaintenance + totalCleaning
-    return { totalIncome, totalRent, totalUtility, totalMaintenance, totalCleaning, totalCost, net: totalIncome - totalCost }
-  }, [bookings, baseMonth, daysInMonth, monthExpenses, properties, rentHistory, monthStr])
-
-  // 各房源明细
-  const propStats = useMemo(() => {
-    const mStart = baseMonth
-    const mEnd = baseMonth.add(daysInMonth, 'day')
-    return properties.map((p) => {
-      const income = Math.round(
-        bookings
-          .filter((b) => b.propertyId === p.id && dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart))
-          .reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0),
-      )
-      const rent = getEffectiveRent(rentHistory, p.id, monthStr)
-      const varExps = monthExpenses.filter((e) => e.propertyId === p.id)
-      const varCost = varExps.reduce((s, e) => s + e.amount, 0)
-      const cost = rent + varCost
-      return { ...p, income, rent, varCost, cost, net: income - cost, exps: varExps }
-    })
-  }, [properties, bookings, baseMonth, daysInMonth, monthExpenses, rentHistory, monthStr])
-
   return (
-    <div style={{ padding: '16px 16px 90px' }}>
+    <div style={{ padding: '14px 14px 100px', background: 'var(--bg)', minHeight: '100%' }}>
+
       {/* 月份导航 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <Button shape="circle" icon={<LeftOutlined />} size="large" onClick={() => setMonthOffset((o) => o - 1)} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <button style={NAV_BTN} onClick={() => setMonthOffset((o) => o - 1)}>
+          <ChevronLeft size={15} color="var(--text-2)" />
+        </button>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>{baseMonth.format('YYYY年M月')}</div>
-          <div style={{ fontSize: 13, color: '#8c8c8c', marginTop: 2 }}>收益明细</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>{baseMonth.format('YYYY年M月')}</div>
         </div>
-        <Button shape="circle" icon={<RightOutlined />} size="large" onClick={() => setMonthOffset((o) => o + 1)} />
+        <button style={NAV_BTN} onClick={() => setMonthOffset((o) => o + 1)}>
+          <ChevronRight size={15} color="var(--text-2)" />
+        </button>
       </div>
 
-      {/* 月度汇总卡片 */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1677ff 0%, #0050b3 100%)',
-        borderRadius: 24, padding: '24px 20px', marginBottom: 16, color: '#fff',
-      }}>
-        <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 16 }}>本月总览</div>
-
-        {/* 净收益大数字 */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 4 }}>本月净收益</div>
-          <div style={{ fontSize: 42, fontWeight: 800, color: summary.net >= 0 ? '#95de64' : '#ff7875' }}>
-            {summary.net >= 0 ? '+' : ''}¥{summary.net}
-          </div>
+      {/* 月度汇总卡片（深绿底） */}
+      <div style={{ background: 'var(--green2)', borderRadius: 16, padding: '16px 16px 14px', marginBottom: 12, color: '#fff' }}>
+        <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 1, marginBottom: 10 }}>本月净收益</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5, marginBottom: 14, color: '#b8ddc8' }}>
+          {summary.net >= 0 ? '+' : ''}¥{summary.net.toLocaleString()}
         </div>
-
-        {/* 收入 / 成本 两格 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {[
-            { label: '总收入', value: summary.totalIncome, color: '#95de64' },
-            { label: '总成本', value: summary.totalCost,  color: '#ff9c6e' },
+            { label: '总收入', value: summary.totalIncome },
+            { label: '总成本', value: summary.totalCost },
           ].map((item) => (
-            <div key={item.label} style={{
-              flex: 1, background: 'rgba(255,255,255,0.12)',
-              borderRadius: 14, padding: '12px 6px', textAlign: 'center',
-            }}>
-              <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>{item.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>¥{Math.abs(item.value)}</div>
+            <div key={item.label} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '9px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: 9, opacity: 0.65, marginBottom: 3 }}>{item.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>¥{item.value.toLocaleString()}</div>
             </div>
           ))}
         </div>
-
-        {/* 成本分类明细 */}
-        <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px' }}>
-          <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 8 }}>成本构成</div>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
           {[
-            { label: `房租（${properties.length} 个房源）`, value: summary.totalRent },
-            { label: '物业水电暖气',                        value: summary.totalUtility },
-            { label: '维修采购',                            value: summary.totalMaintenance },
-            { label: '保洁',                               value: summary.totalCleaning },
+            { label: `房租（${properties.length} 间）`, value: summary.totalRent },
+            { label: '物业水电暖气', value: summary.totalUtility },
+            { label: '维修采购',     value: summary.totalMaintenance },
+            { label: '保洁',         value: summary.totalCleaning },
           ].map((row) => (
-            <div key={row.label} style={{
-              display: 'flex', justifyContent: 'space-between',
-              fontSize: 14, opacity: 0.88, marginBottom: 5,
-            }}>
-              <span>{row.label}</span>
-              <span style={{ fontWeight: row.value > 0 ? 700 : 400 }}>
-                ¥{row.value}
-              </span>
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+              <span style={{ opacity: 0.65 }}>{row.label}</span>
+              <span style={{ fontWeight: 600 }}>¥{row.value}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 入住率 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: '#595959', marginBottom: 10 }}>
-          本月入住率
-        </div>
-        {properties.map((p) => {
-          const cur  = calcOccupancy(p.id, baseMonth)
-          const prev = calcOccupancy(p.id, prevMonth)
-          const diff = cur.rate - prev.rate
-          const trendColor = diff > 0 ? '#52c41a' : '#ff4d4f'
-          const trendSymbol = diff > 0 ? '↑' : '↓'
-          return (
-            <div key={p.id} style={{
-              background: '#fff', borderRadius: 14, padding: '12px 16px', marginBottom: 8,
-              boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-            }}>
-              {/* 本月行 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.coverColor, flexShrink: 0 }} />
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {diff !== 0 && (
-                    <span style={{ fontSize: 13, fontWeight: 700, color: trendColor }}>{trendSymbol}{Math.abs(diff)}%</span>
-                  )}
-                  <span style={{ fontSize: 18, fontWeight: 800, color: p.coverColor }}>{cur.rate}%</span>
-                </div>
+      {/* 本月入住率 */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', letterSpacing: 0.5, marginBottom: 10 }}>本月入住率</div>
+      {properties.map((p) => {
+        const cur  = calcOccupancy(p.id, baseMonth)
+        const prev = calcOccupancy(p.id, prevMonth)
+        const diff = cur.rate - prev.rate
+        const trendColor = diff >= 0 ? 'var(--green)' : 'var(--warm)'
+        return (
+          <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 12, padding: '11px 13px', marginBottom: 8, boxShadow: '0 1px 8px rgba(42,74,58,0.07)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: p.coverColor, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-1)' }}>{p.name}</span>
               </div>
-              <div style={{ height: 10, background: '#f0f0f0', borderRadius: 5, overflow: 'hidden', marginBottom: 4 }}>
-                <div style={{
-                  height: '100%', borderRadius: 5,
-                  width: `${cur.rate}%`, background: p.coverColor,
-                  transition: 'width 0.4s ease',
-                  minWidth: cur.rate > 0 ? 6 : 0,
-                }} />
-              </div>
-              <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 10 }}>
-                已预订 {cur.booked} 天 / 共 {cur.days} 天
-              </div>
-
-              {/* 上月行 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: '#bfbfbf' }}>上月</span>
-                <span style={{ fontSize: 13, color: '#bfbfbf' }}>{prev.rate}%</span>
-              </div>
-              <div style={{ height: 5, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 3,
-                  width: `${prev.rate}%`, background: '#d9d9d9',
-                  transition: 'width 0.4s ease',
-                  minWidth: prev.rate > 0 ? 4 : 0,
-                }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {diff !== 0 && <span style={{ fontSize: 11, fontWeight: 700, color: trendColor }}>{diff > 0 ? '↑' : '↓'}{Math.abs(diff)}%</span>}
+                <span style={{ fontSize: 15, fontWeight: 800, color: p.coverColor }}>{cur.rate}%</span>
               </div>
             </div>
-          )
-        })}
-      </div>
+            <div style={{ height: 7, background: '#f0ece6', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
+              <div style={{ height: '100%', width: `${cur.rate}%`, background: p.coverColor, borderRadius: 4, minWidth: cur.rate > 0 ? 4 : 0, transition: 'width 0.4s ease' }} />
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--text-3)', marginBottom: 7 }}>已预订 {cur.booked} 天 / 共 {cur.days} 天</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+              <span style={{ fontSize: 9, color: 'var(--text-3)' }}>上月</span>
+              <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{prev.rate}%</span>
+            </div>
+            <div style={{ height: 4, background: '#f0ece6', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${prev.rate}%`, background: '#d5cfc8', borderRadius: 3, minWidth: prev.rate > 0 ? 3 : 0 }} />
+            </div>
+          </div>
+        )
+      })}
 
       {/* 各房间明细 */}
-      <div style={{ fontSize: 16, fontWeight: 600, color: '#595959', marginBottom: 12 }}>
-        各房间明细
-      </div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', letterSpacing: 0.5, marginBottom: 10, marginTop: 4 }}>各房间明细</div>
 
       {propStats.map((p) => {
         const expanded = expandedIds.has(p.id)
         return (
-          <div key={p.id} style={{
-            background: '#fff', borderRadius: 20, marginBottom: 12,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden',
-          }}>
-            <div style={{ height: 5, background: p.coverColor }} />
-            <div style={{ padding: '14px 16px' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{p.name}</div>
-
-              {/* 三格数据 */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 12, marginBottom: 10, overflow: 'hidden', boxShadow: '0 1px 8px rgba(42,74,58,0.07)' }}>
+            <div style={{ height: 3, background: p.coverColor }} />
+            <div style={{ padding: '11px 13px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 9 }}>{p.name}</div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 9 }}>
                 {[
-                  { label: '本月收入', value: p.income, color: '#52c41a' },
-                  { label: '本月成本', value: p.cost,   color: '#fa8c16' },
-                  { label: '净收益',   value: p.net,    color: numColor(p.net) },
+                  { label: '本月收入', value: p.income, color: 'var(--green)' },
+                  { label: '本月成本', value: p.cost,   color: 'var(--warm)' },
+                  { label: '净收益',   value: p.net,    color: p.net >= 0 ? 'var(--green)' : 'var(--warm)' },
                 ].map((item) => (
-                  <div key={item.label} style={{
-                    flex: 1, background: '#f8f9fa', borderRadius: 12, padding: '10px 6px', textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: item.color }}>
+                  <div key={item.label} style={{ flex: 1, background: 'var(--bg)', borderRadius: 9, padding: '7px 4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 8, color: 'var(--text-3)', marginBottom: 3 }}>{item.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: item.color }}>
                       {item.value < 0 ? '-' : ''}¥{Math.abs(item.value)}
                     </div>
                   </div>
                 ))}
               </div>
-
-              <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 9 }}>
                 房租 ¥{p.rent} · 变动支出 ¥{p.varCost}
               </div>
-
-              {/* 展开/收起 */}
               <button
                 onClick={() => toggleExpand(p.id)}
-                style={{
-                  width: '100%', height: 38, border: '1px solid #e8e8e8',
-                  background: expanded ? '#f0f5ff' : '#fafafa',
-                  color: expanded ? '#1677ff' : '#8c8c8c',
-                  borderRadius: 10, fontSize: 14, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                }}
+                style={{ width: '100%', height: 34, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-3)', borderRadius: 9, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
               >
-                {expanded ? '▲ 收起明细' : '▼ 展开支出明细'}
+                {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {expanded ? '收起明细' : '展开支出明细'}
                 {p.exps.length > 0 && (
-                  <span style={{
-                    background: expanded ? '#1677ff' : '#8c8c8c',
-                    color: '#fff', borderRadius: 10, padding: '0 6px', fontSize: 12, marginLeft: 4,
-                  }}>
+                  <span style={{ background: 'var(--green-l)', color: 'var(--green)', borderRadius: 999, padding: '0 6px', fontSize: 10, marginLeft: 2, fontWeight: 700 }}>
                     {p.exps.length}
                   </span>
                 )}
               </button>
-
               {expanded && (
-                <div style={{ marginTop: 10, borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    padding: '8px 0', fontSize: 15, color: '#595959', borderBottom: '1px solid #f5f5f5',
-                  }}>
-                    <span>📌 房租（{monthStr}）</span>
+                <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 13, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}>
+                    <span>房租（{monthStr}）</span>
                     <span style={{ fontWeight: 600 }}>¥{p.rent}</span>
                   </div>
                   {p.exps.length === 0 ? (
-                    <div style={{ padding: '12px 0', color: '#bfbfbf', fontSize: 14, textAlign: 'center' }}>
-                      本月无变动支出
-                    </div>
-                  ) : (
-                    p.exps.sort((a, b) => b.date.localeCompare(a.date)).map((e) => (
-                      <div key={e.id} style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        padding: '8px 0', fontSize: 15, color: '#595959', borderBottom: '1px solid #f5f5f5',
-                      }}>
-                        <div>
-                          <span style={{
-                            fontSize: 12, background: '#f0f0f0', color: '#595959',
-                            padding: '1px 8px', borderRadius: 10, marginRight: 6,
-                          }}>
-                            {EXP_TYPE_LABEL[e.type] ?? e.type}
-                          </span>
-                          {e.description}
-                          <div style={{ fontSize: 12, color: '#bfbfbf', marginTop: 2 }}>
-                            {dayjs(e.date).format('M月D日')}
-                          </div>
-                        </div>
-                        <span style={{ fontWeight: 600, color: '#ff4d4f', flexShrink: 0, marginLeft: 8 }}>
-                          ¥{e.amount}
+                    <div style={{ padding: '10px 0', color: 'var(--text-3)', fontSize: 13, textAlign: 'center' }}>本月无变动支出</div>
+                  ) : p.exps.sort((a, b) => b.date.localeCompare(a.date)).map((e) => (
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 13, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <span style={{ fontSize: 10, background: 'var(--bg)', color: 'var(--text-3)', padding: '1px 7px', borderRadius: 999, marginRight: 6 }}>
+                          {EXP_TYPE_LABEL[e.type] ?? e.type}
                         </span>
+                        {e.description}
+                        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>{dayjs(e.date).format('M月D日')}</div>
                       </div>
-                    ))
-                  )}
+                      <span style={{ fontWeight: 600, color: 'var(--warm)', flexShrink: 0, marginLeft: 8 }}>¥{e.amount}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -401,12 +284,9 @@ export default function Revenue() {
       {/* 导出按钮 */}
       <button
         onClick={handleExport}
-        style={{
-          width: '100%', height: 52, marginTop: 8, borderRadius: 14, border: 'none',
-          background: '#1677ff', color: '#fff', fontSize: 17, fontWeight: 700,
-          cursor: 'pointer', letterSpacing: 1,
-        }}
+        style={{ width: '100%', height: 50, marginTop: 4, borderRadius: 14, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 4px 16px rgba(60,102,82,0.28)' }}
       >
+        <Download size={16} />
         导出本月（{baseMonth.format('YYYY年M月')}）
       </button>
     </div>
