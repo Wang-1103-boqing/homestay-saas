@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Modal, Select, message } from 'antd'
-import { ChevronLeft, Plus, Trash2, Palette, Check } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, Palette, Check, Pencil } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useStore } from '../store/useStore'
 import type { ExpenseRecord, ExpenseType, Property, PropertyType } from '../types'
@@ -41,6 +41,8 @@ function PropertyDetail({ property, onBack }: { property: Property; onBack: () =
   const [expDesc, setExpDesc]           = useState('')
   const [editingRent, setEditingRent]   = useState(false)
   const [newRent, setNewRent]           = useState(String(property.monthlyRent))
+  const [editingName, setEditingName]   = useState(false)
+  const [newName, setNewName]           = useState(property.name)
 
   const propExpenses = expenses
     .filter((e) => e.propertyId === property.id)
@@ -66,6 +68,13 @@ function PropertyDetail({ property, onBack }: { property: Property; onBack: () =
       okText: '删除', okType: 'danger', cancelText: '取消',
       onOk: () => { deleteExpense(id); message.success('已删除') },
     })
+  }
+
+  const handleSaveName = () => {
+    if (!newName.trim()) { message.warning('房源名称不能为空'); return }
+    updateProperty({ ...property, name: newName.trim() })
+    setEditingName(false)
+    message.success('名称已更新')
   }
 
   const handleSaveRent = () => {
@@ -94,8 +103,27 @@ function PropertyDetail({ property, onBack }: { property: Property; onBack: () =
         <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--card-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ChevronLeft size={16} color="var(--text-2)" />
         </button>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>{property.name}</div>
+        <div style={{ flex: 1 }}>
+          {editingName ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName() }}
+                style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)', border: 'none', borderBottom: '2px solid var(--green)', outline: 'none', background: 'transparent', width: 140, fontFamily: 'inherit' }}
+              />
+              <button onClick={handleSaveName} style={{ height: 26, padding: '0 10px', borderRadius: 7, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>保存</button>
+              <button onClick={() => { setEditingName(false); setNewName(property.name) }} style={{ height: 26, padding: '0 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 11, cursor: 'pointer' }}>取消</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>{property.name}</div>
+              <button onClick={() => { setEditingName(true); setNewName(property.name) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}>
+                <Pencil size={12} color="var(--text-3)" />
+              </button>
+            </div>
+          )}
           <div style={{ fontSize: 12, color: 'var(--text-3)' }}>支出记录</div>
         </div>
       </div>
