@@ -8,7 +8,8 @@ let idCounter = Date.now()
 const genId = () => `b${++idCounter}`
 
 const lbl: React.CSSProperties = {
-  fontSize: 15, color: '#595959', fontWeight: 500, marginBottom: 8, display: 'block',
+  fontSize: 10, color: 'var(--text-3)', fontWeight: 600,
+  marginBottom: 5, display: 'block', letterSpacing: 0.5,
 }
 
 // ── 自定义日期范围选择器 ───────────────────────────────────────
@@ -95,18 +96,18 @@ function DateRangePicker({ checkIn, checkOut, mode, onChange, bookedDates }: DRP
       <div
         onClick={openPicker}
         style={{
-          border: '1.5px solid #e8e8e8', borderRadius: 12, padding: '14px 16px',
-          background: '#fff', cursor: 'pointer', minHeight: 52,
+          border: '1.5px solid var(--border)', borderRadius: 12, padding: '14px 16px',
+          background: 'var(--card-bg)', cursor: 'pointer', minHeight: 52,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}
       >
         {checkIn ? (
           <div style={{ fontSize: 17 }}>
-            <span style={{ color: '#1677ff', fontWeight: 700 }}>
+            <span style={{ color: 'var(--green)', fontWeight: 700 }}>
               {dayjs(checkIn).format('M月D日')}
             </span>
-            <span style={{ color: '#8c8c8c', margin: '0 8px' }}>→</span>
-            <span style={{ color: co ? '#1a1a1a' : '#bfbfbf', fontWeight: co ? 700 : 400 }}>
+            <span style={{ color: 'var(--text-3)', margin: '0 8px' }}>→</span>
+            <span style={{ color: co ? 'var(--text-1)' : 'var(--text-3)', fontWeight: co ? 700 : 400 }}>
               {co ? dayjs(co).format('M月D日') : '退房日期'}
             </span>
             {nights > 0 && (
@@ -116,7 +117,7 @@ function DateRangePicker({ checkIn, checkOut, mode, onChange, bookedDates }: DRP
             )}
           </div>
         ) : (
-          <span style={{ color: '#bfbfbf', fontSize: 17 }}>请选择入住 / 退房日期</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 15 }}>请选择入住 / 退房日期</span>
         )}
         <span style={{ fontSize: 20, flexShrink: 0, marginLeft: 8 }}>📅</span>
       </div>
@@ -131,7 +132,7 @@ function DateRangePicker({ checkIn, checkOut, mode, onChange, bookedDates }: DRP
           }}
         >
           <div style={{
-            width: '100%', maxWidth: 540, background: '#fff',
+            width: '100%', maxWidth: 540, background: 'var(--card-bg)',
             borderRadius: '20px 20px 0 0', padding: '20px 16px',
             paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
             maxHeight: '85vh', overflowY: 'auto',
@@ -179,13 +180,13 @@ function DateRangePicker({ checkIn, checkOut, mode, onChange, bookedDates }: DRP
             {/* 月份导航 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <button onClick={() => setViewMonth((v) => v.subtract(1, 'month'))} style={{
-                width: 38, height: 38, border: '1px solid #e8e8e8', borderRadius: 8,
-                background: '#fff', fontSize: 20, cursor: 'pointer', color: '#595959',
+                width: 38, height: 38, border: '1px solid var(--border)', borderRadius: 8,
+                background: 'var(--card-bg)', fontSize: 20, cursor: 'pointer', color: 'var(--text-2)',
               }}>‹</button>
               <span style={{ fontSize: 16, fontWeight: 700 }}>{viewMonth.format('YYYY年M月')}</span>
               <button onClick={() => setViewMonth((v) => v.add(1, 'month'))} style={{
-                width: 38, height: 38, border: '1px solid #e8e8e8', borderRadius: 8,
-                background: '#fff', fontSize: 20, cursor: 'pointer', color: '#595959',
+                width: 38, height: 38, border: '1px solid var(--border)', borderRadius: 8,
+                background: 'var(--card-bg)', fontSize: 20, cursor: 'pointer', color: 'var(--text-2)',
               }}>›</button>
             </div>
 
@@ -377,10 +378,10 @@ export default function AddBooking() {
   }
 
   return (
-    <div style={{ padding: '16px 16px 100px' }}>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 20 }}>新增预订</div>
+    <div style={{ padding: '16px 16px 100px', background: 'var(--bg)', minHeight: '100%' }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)', marginBottom: 18 }}>新增预订</div>
 
-      <div style={{ background: '#fff', borderRadius: 20, padding: '20px 16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <div style={{ background: 'var(--card-bg)', borderRadius: 20, padding: '20px 16px', boxShadow: '0 2px 16px rgba(42,74,58,0.08)' }}>
 
         {/* 按晚 / 包月 切换 */}
         <div style={{ marginBottom: 20 }}>
@@ -392,8 +393,8 @@ export default function AddBooking() {
                 onClick={() => handleModeChange(mode)}
                 style={{
                   flex: 1, height: 42, borderRadius: 9, border: 'none',
-                  background: bookingMode === mode ? '#1677ff' : 'transparent',
-                  color: bookingMode === mode ? '#fff' : '#595959',
+                  background: bookingMode === mode ? 'var(--green)' : 'transparent',
+                  color: bookingMode === mode ? '#fff' : 'var(--text-2)',
                   fontSize: 17, cursor: 'pointer',
                   fontWeight: bookingMode === mode ? 700 : 400, transition: 'all 0.15s',
                 }}
@@ -489,7 +490,7 @@ export default function AddBooking() {
       }}>
         <Button
           type="primary" block size="large" loading={loading} onClick={handleSubmit}
-          style={{ height: 56, fontSize: 20, fontWeight: 700, borderRadius: 16, letterSpacing: 2 }}
+          style={{ height: 50, fontSize: 16, fontWeight: 700, borderRadius: 14, letterSpacing: 2, background: 'var(--green)', borderColor: 'var(--green)', boxShadow: '0 4px 16px rgba(60,102,82,0.28)' }}
         >
           确认预订
         </Button>
