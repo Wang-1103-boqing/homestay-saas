@@ -149,33 +149,64 @@ export default function Revenue() {
         </button>
       </div>
 
-      {/* 月度汇总卡片（深绿底） */}
-      <div style={{ background: 'var(--green2)', borderRadius: 16, padding: '16px 16px 14px', marginBottom: 12, color: '#fff' }}>
-        <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 1, marginBottom: 10 }}>本月净收益</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5, marginBottom: 14, color: '#b8ddc8' }}>
-          {summary.net >= 0 ? '+' : ''}¥{summary.net.toLocaleString()}
+      {/* 月度汇总卡片（收据风格） */}
+      <div style={{ background: 'var(--card-bg)', borderRadius: 16, overflow: 'hidden', marginBottom: 12, boxShadow: '0 2px 20px rgba(42,74,58,0.10)' }}>
+
+        {/* 顶部渐变色条 */}
+        <div style={{ height: 4, background: `linear-gradient(90deg, var(--green-l), var(--green), var(--green2))` }} />
+
+        {/* 净收益主区域 */}
+        <div style={{ padding: '18px 18px 14px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-3)', letterSpacing: 2, fontWeight: 600, marginBottom: 8 }}>
+            {baseMonth.format('YYYY年M月')} · 净收益
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: -1, color: summary.net >= 0 ? 'var(--green)' : 'var(--warm)', lineHeight: 1 }}>
+            {summary.net >= 0 ? '+' : ''}¥{summary.net.toLocaleString()}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {[
-            { label: '总收入', value: summary.totalIncome },
-            { label: '总成本', value: summary.totalCost },
-          ].map((item) => (
-            <div key={item.label} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '9px 8px', textAlign: 'center' }}>
-              <div style={{ fontSize: 9, opacity: 0.65, marginBottom: 3 }}>{item.label}</div>
-              <div style={{ fontSize: 16, fontWeight: 800 }}>¥{item.value.toLocaleString()}</div>
-            </div>
-          ))}
+
+        {/* 虚线撕页线 */}
+        <div style={{ position: 'relative', margin: '0 0', height: 1 }}>
+          <div style={{ borderTop: '1.5px dashed var(--border)', margin: '0 16px' }} />
+          {/* 两侧缺口 */}
+          <div style={{ position: 'absolute', left: -8, top: -8, width: 16, height: 16, borderRadius: '50%', background: 'var(--bg)' }} />
+          <div style={{ position: 'absolute', right: -8, top: -8, width: 16, height: 16, borderRadius: '50%', background: 'var(--bg)' }} />
         </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+
+        {/* 收入 / 成本 两格 */}
+        <div style={{ display: 'flex', padding: '12px 18px', gap: 12 }}>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 9, color: 'var(--text-3)', letterSpacing: 1, marginBottom: 4 }}>总收入</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--green)' }}>¥{summary.totalIncome.toLocaleString()}</div>
+          </div>
+          <div style={{ width: 1, background: 'var(--border)', borderRadius: 1 }} />
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 9, color: 'var(--text-3)', letterSpacing: 1, marginBottom: 4 }}>总成本</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-2)' }}>¥{summary.totalCost.toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* 第二条虚线 */}
+        <div style={{ position: 'relative', height: 1 }}>
+          <div style={{ borderTop: '1.5px dashed var(--border)', margin: '0 16px' }} />
+          <div style={{ position: 'absolute', left: -8, top: -8, width: 16, height: 16, borderRadius: '50%', background: 'var(--bg)' }} />
+          <div style={{ position: 'absolute', right: -8, top: -8, width: 16, height: 16, borderRadius: '50%', background: 'var(--bg)' }} />
+        </div>
+
+        {/* 成本构成明细 */}
+        <div style={{ padding: '10px 18px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 9, color: 'var(--text-3)', letterSpacing: 1.5, marginBottom: 2 }}>成本构成</div>
           {[
             { label: `房租（${properties.length} 间）`, value: summary.totalRent },
-            { label: '物业水电暖气', value: summary.totalUtility },
-            { label: '维修采购',     value: summary.totalMaintenance },
-            { label: '保洁',         value: summary.totalCleaning },
+            { label: '物业水电暖气',                    value: summary.totalUtility },
+            { label: '维修采购',                        value: summary.totalMaintenance },
+            { label: '保洁',                            value: summary.totalCleaning },
           ].map((row) => (
-            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-              <span style={{ opacity: 0.65 }}>{row.label}</span>
-              <span style={{ fontWeight: 600 }}>¥{row.value}</span>
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+              <span style={{ color: 'var(--text-3)' }}>{row.label}</span>
+              <span style={{ fontWeight: 600, color: row.value > 0 ? 'var(--text-2)' : 'var(--text-3)' }}>
+                {row.value > 0 ? `¥${row.value.toLocaleString()}` : '—'}
+              </span>
             </div>
           ))}
         </div>
