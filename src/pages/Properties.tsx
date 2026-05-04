@@ -292,9 +292,11 @@ export default function Properties() {
         const st = STATUS_MAP[p.status]
         return (
           <div key={p.id} style={{ background: 'var(--card-bg)', borderRadius: 14, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 16px rgba(42,74,58,0.08)' }}>
-            {/* 封面色块 */}
-            <div style={{ height: 60, background: `linear-gradient(135deg, ${p.coverColor}88, ${p.coverColor})`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <div style={{ fontSize: 26 }}>🏡</div>
+            {/* 封面色块：房源名称居顶 */}
+            <div style={{ height: 60, background: `linear-gradient(135deg, ${p.coverColor}cc, ${p.coverColor})`, display: 'flex', alignItems: 'center', paddingLeft: 14, position: 'relative' }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: 0.5, textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
+                {p.name}
+              </span>
               {/* 换色按钮 */}
               <button
                 onClick={(e) => { e.stopPropagation(); setColorPickingId(colorPickingId === p.id ? null : p.id) }}
