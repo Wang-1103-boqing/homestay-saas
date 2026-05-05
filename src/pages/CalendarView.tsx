@@ -360,18 +360,19 @@ export default function CalendarView() {
                     height: nights * ROW_H - 4,
                     background: p.coverColor,
                     borderRadius: 6,
-                    padding: '4px 6px',
+                    padding: '5px 6px 4px',
                     fontSize: 9, fontWeight: 700, color: '#fff',
                     overflow: 'hidden', zIndex: 2, cursor: 'pointer',
                     lineHeight: 1.3,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.25)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'flex-start',
                     textAlign: 'center',
                     gap: 2,
+                    filter: 'brightness(1.18) saturate(0.88)',
                   }}
                 >
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>
