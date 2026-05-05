@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { setDbUserId, migrateData } from '../lib/db'
 import Login from '../pages/Login'
 import App from '../App'
 
@@ -9,21 +10,23 @@ export default function AuthGate() {
   const { user, setAuth, clearAuth } = useAuthStore()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleSession = async (session: typeof supabase.auth.getSession extends () => Promise<{ data: { session: infer S } }> ? S : never) => {
       if (session) {
         setAuth(session.user, session)
+        setDbUserId(session.user.id)
+        await migrateData(session.user.id)
       } else {
         clearAuth()
+        setDbUserId(null)
       }
-      setChecking(false)
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session).finally(() => setChecking(false))
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setAuth(session.user, session)
-      } else {
-        clearAuth()
-      }
+      handleSession(session)
     })
 
     return () => {

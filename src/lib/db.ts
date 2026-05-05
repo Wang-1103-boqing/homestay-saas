@@ -1,6 +1,30 @@
 import { supabase } from './supabase'
 import type { Property, Booking, ExpenseRecord, RentHistory } from '../types'
 
+// ── 当前用户 ID（由 AuthGate 注入）────────────────────────────
+
+let currentUserId: string | null = null
+
+export function setDbUserId(userId: string | null) {
+  currentUserId = userId
+}
+
+function getUserId(): string {
+  if (!currentUserId) throw new Error('User not authenticated')
+  return currentUserId
+}
+
+// ── 数据迁移：把无主之数据绑定到当前用户 ──────────────────────
+
+export async function migrateData(userId: string) {
+  await Promise.all([
+    supabase.from('properties').update({ user_id: userId }).is('user_id', null),
+    supabase.from('bookings').update({ user_id: userId }).is('user_id', null),
+    supabase.from('expenses').update({ user_id: userId }).is('user_id', null),
+    supabase.from('rent_history').update({ user_id: userId }).is('user_id', null),
+  ])
+}
+
 // ── snake_case ↔ camelCase 映射 ──────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,6 +35,7 @@ const propToDb = (p: Property): Row => ({
   price_per_night: p.pricePerNight, status: p.status,
   description: p.description, cover_color: p.coverColor,
   monthly_rent: p.monthlyRent,
+  user_id: getUserId(),
 })
 const propFromDb = (r: Row): Property => ({
   id: r.id, name: r.name, type: r.type, capacity: r.capacity,
@@ -26,6 +51,7 @@ const bookingToDb = (b: Booking): Row => ({
   payment_method: b.paymentMethod, payment_status: b.paymentStatus,
   notes: b.notes, created_at: b.createdAt,
   booking_mode: b.bookingMode ?? 'nightly',
+  user_id: getUserId(),
 })
 const bookingFromDb = (r: Row): Booking => ({
   id: r.id, propertyId: r.property_id, guestName: r.guest_name,
@@ -41,6 +67,7 @@ const expenseToDb = (e: ExpenseRecord): Row => ({
   id: e.id, property_id: e.propertyId, type: e.type,
   date: e.date, amount: e.amount, description: e.description,
   created_at: e.createdAt,
+  user_id: getUserId(),
 })
 const expenseFromDb = (r: Row): ExpenseRecord => ({
   id: r.id, propertyId: r.property_id, type: r.type,
@@ -51,6 +78,7 @@ const expenseFromDb = (r: Row): ExpenseRecord => ({
 const rentToDb = (r: RentHistory): Row => ({
   id: r.id, property_id: r.propertyId, amount: r.amount,
   effective_month: r.effectiveMonth, created_at: r.createdAt,
+  user_id: getUserId(),
 })
 const rentFromDb = (r: Row): RentHistory => ({
   id: r.id, propertyId: r.property_id, amount: r.amount,
@@ -60,11 +88,12 @@ const rentFromDb = (r: Row): RentHistory => ({
 // ── 批量拉取全部数据 ─────────────────────────────────────────
 
 export async function fetchAll() {
+  const userId = getUserId()
   const [p, b, e, rh] = await Promise.all([
-    supabase.from('properties').select('*').order('created_at'),
-    supabase.from('bookings').select('*').order('check_in', { ascending: false }),
-    supabase.from('expenses').select('*').order('date', { ascending: false }),
-    supabase.from('rent_history').select('*').order('effective_month'),
+    supabase.from('properties').select('*').eq('user_id', userId).order('created_at'),
+    supabase.from('bookings').select('*').eq('user_id', userId).order('check_in', { ascending: false }),
+    supabase.from('expenses').select('*').eq('user_id', userId).order('date', { ascending: false }),
+    supabase.from('rent_history').select('*').eq('user_id', userId).order('effective_month'),
   ])
   return {
     properties:  (p.data  ?? []).map(propFromDb),
