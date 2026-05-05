@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, Calendar, FileText, Home, DollarSign, Bell } from 'lucide-react'
+import { Plus, Calendar, FileText, Home, DollarSign, Bell, LogOut } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { fetchAll } from './lib/db'
 import { useStore } from './store/useStore'
@@ -155,7 +155,24 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-          <Bell size={16} color="var(--text-3)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Bell size={16} color="var(--text-3)" />
+            <button
+              onClick={() => supabase.auth.signOut()}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="退出登录"
+            >
+              <LogOut size={16} color="var(--text-3)" />
+            </button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: realtimeOk ? 'var(--green)' : 'var(--warm)' }}>
             <div style={{ width: 4, height: 4, borderRadius: '50%', background: realtimeOk ? 'var(--green)' : 'var(--warm)' }} />
             {realtimeOk ? '实时同步' : '离线模式'}

@@ -5,8 +5,8 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export const supabase = createClient(url, key, {
   auth: {
-    persistSession: false,   // 无需登录，禁止 session 存储
-    autoRefreshToken: false,
+    persistSession: true,
+    autoRefreshToken: true,
   },
   global: {
     // 国内访问 Supabase REST API 超时设为 15s（默认无限制）
