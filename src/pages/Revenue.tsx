@@ -21,11 +21,11 @@ function proportionalIncome(b: Booking, mStart: dayjs.Dayjs, mEnd: dayjs.Dayjs):
   return (b.totalAmount * daysInMonth) / totalDays
 }
 
-function getEffectiveRent(rentHistory: RentHistory[], propId: string, month: string): number {
+function getEffectiveRent(rentHistory: RentHistory[], propId: string, month: string, defaultRent = 0): number {
   const records = rentHistory
     .filter((r) => r.propertyId === propId && r.effectiveMonth <= month)
     .sort((a, b) => b.effectiveMonth.localeCompare(a.effectiveMonth))
-  return records[0]?.amount ?? 0
+  return records[0]?.amount ?? defaultRent
 }
 
 const NAV_BTN: React.CSSProperties = {
@@ -82,7 +82,7 @@ export default function Revenue() {
         .filter((b) => dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart))
         .reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0),
     )
-    const totalRent        = properties.reduce((s, p) => s + getEffectiveRent(rentHistory, p.id, monthStr), 0)
+    const totalRent        = properties.reduce((s, p) => s + getEffectiveRent(rentHistory, p.id, monthStr, p.monthlyRent), 0)
     const totalUtility     = monthExpenses.filter((e) => e.type === 'utility').reduce((s, e) => s + e.amount, 0)
     const totalMaintenance = monthExpenses.filter((e) => e.type === 'maintenance').reduce((s, e) => s + e.amount, 0)
     const totalCleaning    = monthExpenses.filter((e) => e.type === 'cleaning').reduce((s, e) => s + e.amount, 0)
@@ -95,7 +95,7 @@ export default function Revenue() {
     const mEnd   = baseMonth.add(daysInMonth, 'day')
     return properties.map((p) => {
       const income  = Math.round(bookings.filter((b) => b.propertyId === p.id && dayjs(b.checkIn).isBefore(mEnd) && dayjs(b.checkOut).isAfter(mStart)).reduce((s, b) => s + proportionalIncome(b, mStart, mEnd), 0))
-      const rent    = getEffectiveRent(rentHistory, p.id, monthStr)
+      const rent    = getEffectiveRent(rentHistory, p.id, monthStr, p.monthlyRent)
       const varExps = monthExpenses.filter((e) => e.propertyId === p.id)
       const varCost = varExps.reduce((s, e) => s + e.amount, 0)
       const cost    = rent + varCost
