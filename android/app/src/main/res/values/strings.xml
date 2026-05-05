@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">民宿管家</string>
+    <string name="title_activity_main">民宿管家</string>
+    <string name="package_name">com.wangboqing.homestay</string>
+    <string name="custom_url_scheme">com.wangboqing.homestay</string>
+</resources>
