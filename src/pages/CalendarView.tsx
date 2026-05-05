@@ -366,11 +366,19 @@ export default function CalendarView() {
                     lineHeight: 1.3,
                     boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                     textShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    gap: 2,
                   }}
                 >
-                  {booking.guestName}
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>
+                    {booking.guestName}
+                  </div>
                   {booking.bookingMode === 'monthly' && (
-                    <div style={{ fontSize: 5, opacity: 0.85 }}>包月</div>
+                    <div style={{ fontSize: 6, opacity: 0.9, fontWeight: 600 }}>包月</div>
                   )}
                 </div>
               ))
