@@ -38,8 +38,12 @@ export default function AuthGate() {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       // PASSWORD_RECOVERY 事件不触发登录态切换，由 Login 组件自行处理
       if (event === 'PASSWORD_RECOVERY') return
-      // recovery 流程中 SIGNED_IN 也不应切换登录态
-      if (isRecovery && event === 'SIGNED_IN') return
+      // 只有 URL hash 中还有 recovery 标记时才忽略 SIGNED_IN（避免 recovery 流程误登录）
+      // Login 处理完 recovery 会清除 hash，之后用户正常登录的 SIGNED_IN 必须处理
+      if (event === 'SIGNED_IN') {
+        const currentHash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+        if (currentHash.get('type') === 'recovery') return
+      }
       handleSession(session)
     })
 
