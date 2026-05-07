@@ -21,20 +21,25 @@ export default function AuthGate() {
       }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // 密码重置流程：URL hash 中有 recovery token，此时 session 是临时的，
-      // 不应视为已登录，保持未登录状态让 Login 组件处理重置页面
-      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-      if (hash.get('type') === 'recovery') {
-        setChecking(false)
-        return
-      }
-      handleSession(session).finally(() => setChecking(false))
-    })
+    // getSession() 会清除 URL hash，所以必须在调用前先保存 recovery 状态
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const isRecovery = hashParams.get('type') === 'recovery'
+
+    if (isRecovery) {
+      // 密码重置流程：不调用 getSession()（避免清除 hash），
+      // 保持未登录状态让 Login 组件自行处理重置页面
+      setChecking(false)
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        handleSession(session).finally(() => setChecking(false))
+      })
+    }
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       // PASSWORD_RECOVERY 事件不触发登录态切换，由 Login 组件自行处理
       if (event === 'PASSWORD_RECOVERY') return
+      // recovery 流程中 SIGNED_IN 也不应切换登录态
+      if (isRecovery && event === 'SIGNED_IN') return
       handleSession(session)
     })
 
