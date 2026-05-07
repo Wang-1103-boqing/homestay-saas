@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/homestay-saas/',
   plugins: [
     react(),
     VitePWA({
@@ -16,8 +17,8 @@ export default defineConfig({
         theme_color: '#3c6652',
         background_color: '#f6f4f0',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: '/homestay-saas/',
+        start_url: '/homestay-saas/',
         icons: [
           {
             src: 'pwa-192x192.png',
