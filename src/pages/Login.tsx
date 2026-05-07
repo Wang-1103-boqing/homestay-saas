@@ -20,6 +20,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    // 方法1：解析 URL hash 中的 recovery token（Supabase 重定向后带 #type=recovery）
     const hash = parseHash(window.location.hash)
     if (hash.type === 'recovery' && hash.access_token && hash.refresh_token) {
       setLoading(true)
@@ -35,6 +36,19 @@ export default function Login() {
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
         setMode('reset')
       })
+      return
+    }
+
+    // 方法2：监听 PASSWORD_RECOVERY 事件（作为备用保障）
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        setMode('reset')
+      }
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
     }
   }, [])
 
