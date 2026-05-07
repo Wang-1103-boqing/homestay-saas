@@ -1,5 +1,6 @@
 {
   "version": "2.0",
+  "envId": "homestay-d0ga8cej13ab99add",
   "$schema": "https://framework-1258016615.tcloudbaseapp.com/cloudbaserc-version-2.json",
   "framework": {
     "name": "homestay-saas",
