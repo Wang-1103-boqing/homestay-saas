@@ -21,11 +21,25 @@ export default function AuthGate() {
       }
     }
 
-    // getSession() 会清除 URL hash，所以必须在调用前先保存 recovery 状态
+    // 在 getSession() 之前先保存各类 auth callback 状态（getSession() 会清除 URL hash）
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code') // PKCE flow（邮件确认、OAuth）
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const isRecovery = hashParams.get('type') === 'recovery'
 
-    if (isRecovery) {
+    if (code) {
+      // PKCE flow：用 code 交换 session（Supabase v2 邮件确认默认行为）
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error || !data.session) {
+          console.error('[auth] exchangeCodeForSession failed:', error)
+          setChecking(false)
+          return
+        }
+        // 清除 URL 中的 code，防止刷新时重复交换
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+        handleSession(data.session).finally(() => setChecking(false))
+      })
+    } else if (isRecovery) {
       // 密码重置流程：不调用 getSession()（避免清除 hash），
       // 保持未登录状态让 Login 组件自行处理重置页面
       setChecking(false)
