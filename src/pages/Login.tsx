@@ -204,6 +204,10 @@ export default function Login() {
             <Input
               size="large"
               type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="off"
+              autoCorrect="off"
               placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -220,6 +224,7 @@ export default function Login() {
             </label>
             <Input.Password
               size="large"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               placeholder="请输入密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
