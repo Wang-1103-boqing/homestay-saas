@@ -161,9 +161,8 @@ export default function Login() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
       background: 'var(--bg)',
-      padding: 24,
+      padding: '15vh 24px 24px',
       gap: 24,
     }}>
       {/* Logo */}
