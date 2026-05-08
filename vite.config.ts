@@ -2,9 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Vercel 自动设置 VERCEL=1 环境变量；其他构建（本地→腾讯云）用 /homestay-saas/ 前缀
+const isVercel = !!process.env.VERCEL
+const basePath = isVercel ? '/' : '/homestay-saas/'
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/homestay-saas/',
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +21,8 @@ export default defineConfig({
         theme_color: '#3c6652',
         background_color: '#f6f4f0',
         display: 'standalone',
-        scope: '/homestay-saas/',
-        start_url: '/homestay-saas/',
+        scope: basePath,
+        start_url: basePath,
         icons: [
           {
             src: 'pwa-192x192.png',
