@@ -92,7 +92,7 @@ export default function Login() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: 'https://homestay-d0ga8cej13ab99add-1426248930.tcloudbaseapp.com/',
+        emailRedirectTo: `${window.location.origin}/`,
       },
     })
     setLoading(false)
@@ -118,7 +118,7 @@ export default function Login() {
 
     setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: 'https://homestay-d0ga8cej13ab99add-1426248930.tcloudbaseapp.com/?flow=recovery',
+      redirectTo: `${window.location.origin}/?flow=recovery`,
     })
     setLoading(false)
 
