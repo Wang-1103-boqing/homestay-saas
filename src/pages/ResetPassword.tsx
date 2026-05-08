@@ -8,22 +8,35 @@ export default function ResetPassword() {
   const [verifying, setVerifying] = useState(false)
 
   useEffect(() => {
+    // PKCE flow（Supabase v2 默认）：链接带 ?code=xxx
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        setLoading(false)
+        if (error) {
+          message.error('重置链接已过期或无效')
+          return
+        }
+        window.history.replaceState(null, '', window.location.pathname)
+      })
+      return
+    }
+
+    // 隐式流程（旧版）：链接带 #access_token=...&type=recovery
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const access_token = hash.get('access_token')
     const refresh_token = hash.get('refresh_token')
     const type = hash.get('type')
 
     if (type === 'recovery' && access_token && refresh_token) {
-      supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      }).then(({ error }) => {
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
         setLoading(false)
         if (error) {
           message.error('重置链接已过期或无效')
           return
         }
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        window.history.replaceState(null, '', window.location.pathname)
       })
     } else {
       setLoading(false)
