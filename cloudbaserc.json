@@ -11,7 +11,7 @@
           "path": "/homestay-saas",
           "redirects": [
             {
-              "source": "/homestay-saas/*",
+              "source": "/homestay-saas/**",
               "destination": "/homestay-saas/index.html",
               "status": 200
             }
