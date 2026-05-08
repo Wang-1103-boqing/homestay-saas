@@ -3,6 +3,15 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS PWA 输入框修复 */
+input, textarea, select,
+.ant-input, .ant-input-password input {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  font-size: 16px !important; /* 16px 以下 iOS 会触发自动缩放 */
+}
+
 :root {
   /* ── 主色彩 ── */
   --green:   #3c6652;
