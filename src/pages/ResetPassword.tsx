@@ -59,7 +59,7 @@ export default function ResetPassword() {
 
     message.success('密码重置成功，请用新密码登录')
     setTimeout(() => {
-      window.location.href = '/homestay-saas'
+      window.location.href = '/'
     }, 1500)
   }
 
