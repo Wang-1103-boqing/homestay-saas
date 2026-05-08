@@ -118,7 +118,7 @@ export default function Login() {
 
     setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: 'https://homestay-d0ga8cej13ab99add-1426248930.tcloudbaseapp.com/homestay-saas/reset-password',
+      redirectTo: 'https://homestay-d0ga8cej13ab99add-1426248930.tcloudbaseapp.com/homestay-saas?flow=recovery',
     })
     setLoading(false)
 

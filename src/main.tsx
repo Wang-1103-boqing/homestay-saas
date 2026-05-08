@@ -5,7 +5,8 @@ import ResetPassword from './pages/ResetPassword'
 import './index.css'
 
 const path = window.location.pathname
-const isResetPassword = path === '/homestay-saas/reset-password'
+const urlParams = new URLSearchParams(window.location.search)
+const isResetPassword = path === '/homestay-saas/reset-password' || urlParams.get('flow') === 'recovery'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
