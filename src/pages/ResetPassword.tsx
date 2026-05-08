@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const [verifying, setVerifying] = useState(false)
 
@@ -47,6 +48,7 @@ export default function ResetPassword() {
   const handleReset = async () => {
     if (!newPassword) { message.error('请输入新密码'); return }
     if (newPassword.length < 6) { message.error('密码至少 6 位'); return }
+    if (newPassword !== confirmPassword) { message.error('两次输入的密码不一致'); return }
 
     setVerifying(true)
     const { error } = await supabase.auth.updateUser({ password: newPassword })
@@ -113,7 +115,7 @@ export default function ResetPassword() {
           设置新密码
         </div>
 
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, marginBottom: 5, display: 'block', letterSpacing: 0.5 }}>
             新密码
           </label>
@@ -122,6 +124,19 @@ export default function ResetPassword() {
             placeholder="请输入新密码"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            style={{ borderRadius: 12 }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, marginBottom: 5, display: 'block', letterSpacing: 0.5 }}>
+            确认密码
+          </label>
+          <Input.Password
+            size="large"
+            placeholder="再次输入新密码"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             style={{ borderRadius: 12 }}
           />
         </div>
