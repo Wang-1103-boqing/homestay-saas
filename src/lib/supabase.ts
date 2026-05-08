@@ -7,6 +7,7 @@ export const supabase = createClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: false,
   },
   global: {
     // 国内访问 Supabase REST API 超时设为 15s（默认无限制）
